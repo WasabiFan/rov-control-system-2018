@@ -3,12 +3,23 @@
 
 #include <Arduino.h>
 
-struct SerialPacket {
+struct SerialPacket
+{
     std::string type;
     std::vector<std::string> parameters;
 };
 
-bool readPacketFromSerial(SerialPacket* out);
-void sendPacketToSerial(SerialPacket* packet);
+class Comms
+{
+  private:
+    std::string serialLineBuffer;
+    uint32_t lastReceiveTime = 0;
 
-void debugEchoPacketToSerial(SerialPacket* packet);
+  public:
+    bool readPacketFromSerial(SerialPacket *out);
+    void sendPacketToSerial(SerialPacket *packet);
+
+    void debugEchoPacketToSerial(SerialPacket *packet);
+
+    uint32_t getTimeSinceLastReceive();
+};

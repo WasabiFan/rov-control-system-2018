@@ -3,14 +3,16 @@
 #include <sstream>
 #include <iterator>
 
-std::string serialLineBuffer;
-
-bool readPacketFromSerial(SerialPacket* resultPacket) {
-    while(Serial.available()) {
+bool Comms::readPacketFromSerial(SerialPacket *resultPacket)
+{
+    while (Serial.available())
+    {
         char val = Serial.read();
 
-        if(val == '\n') {
-            if(serialLineBuffer[0] != '!') {
+        if (val == '\n')
+        {
+            if (serialLineBuffer[0] != '!')
+            {
                 // Received non-packet, bail
                 serialLineBuffer.clear();
                 return false;
@@ -19,14 +21,16 @@ bool readPacketFromSerial(SerialPacket* resultPacket) {
 
             std::getline(bufferStream, resultPacket->type, ' ');
             resultPacket->type.erase(0, 1);
-            
+
             resultPacket->parameters.clear();
-            std::string nextParameter;    
-            while (std::getline(bufferStream, nextParameter, ' ')) {
+            std::string nextParameter;
+            while (std::getline(bufferStream, nextParameter, ' '))
+            {
                 resultPacket->parameters.push_back(nextParameter);
             }
 
             serialLineBuffer.clear();
+            lastReceiveTime = millis();
             return true;
         }
 
@@ -36,11 +40,13 @@ bool readPacketFromSerial(SerialPacket* resultPacket) {
     return false;
 }
 
-void sendPacketToSerial(SerialPacket* packet) {
+void Comms::sendPacketToSerial(SerialPacket *packet)
+{
     Serial.print('!');
     Serial.print(packet->type.c_str());
 
-    for(std::size_t i = 0; i < packet->parameters.size(); i++) {
+    for (std::size_t i = 0; i < packet->parameters.size(); i++)
+    {
         Serial.print(' ');
         Serial.print(packet->parameters[i].c_str());
     }
@@ -48,13 +54,20 @@ void sendPacketToSerial(SerialPacket* packet) {
     Serial.print('\n');
 }
 
-void debugEchoPacketToSerial(SerialPacket* packet) {
+void Comms::debugEchoPacketToSerial(SerialPacket *packet)
+{
     Serial.print("Packet type: ");
     Serial.println((*packet).type.c_str());
-    for(std::size_t i = 0; i < (*packet).parameters.size(); i++) {
+    for (std::size_t i = 0; i < (*packet).parameters.size(); i++)
+    {
         Serial.print("    [");
         Serial.print(i);
         Serial.print("]: ");
         Serial.println((*packet).parameters[i].c_str());
     }
+}
+
+uint32_t Comms::getTimeSinceLastReceive()
+{
+    return millis() - this->lastReceiveTime;
 }

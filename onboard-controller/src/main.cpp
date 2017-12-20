@@ -1,20 +1,13 @@
 #include "Arduino.h"
-#include <Eigen.h>
-#include <Dense>
 
+#include "common.h"
 #include "comms.h"
+#include "control.h"
 
-// https://forum.pjrc.com/threads/29177-Teensy-3-1-signalr-c-(-text-_kill_r-0xe)-undefined-reference-to-_kill-error
-extern "C"{
-  int _getpid() { return -1;}
-  int _kill(int pid, int sig) { return -1; }
-  int _write() {return -1;}
-}
+#define DISABLE_TIMEOUT (5000)
 
-using namespace Eigen;
-typedef Matrix<float, 6, 1> Vector6f;
-
-Matrix<float, 6, 6> intrinsics = Matrix<float, 6, 6>::Random();
+Comms comms;
+Control control;
 
 void setup()
 {
@@ -42,7 +35,20 @@ void setup()
 void loop()
 {
     SerialPacket lastPacket;
-    while(readPacketFromSerial(&lastPacket)) {
-        sendPacketToSerial(&lastPacket);
+    while(comms.readPacketFromSerial(&lastPacket)) {
+        // TODO: Prevent blocking loop for too long
+        comms.sendPacketToSerial(&lastPacket);
     }
+
+    if(comms.getTimeSinceLastReceive() > DISABLE_TIMEOUT) {
+        control.disable();
+        // TODO: log?
+    }
+}
+
+// https://forum.pjrc.com/threads/29177-Teensy-3-1-signalr-c-(-text-_kill_r-0xe)-undefined-reference-to-_kill-error
+extern "C" {
+  int _getpid() { return -1;}
+  int _kill(int pid, int sig) { return -1; }
+  int _write() {return -1;}
 }
