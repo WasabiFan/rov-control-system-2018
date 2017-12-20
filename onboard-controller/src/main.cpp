@@ -43,6 +43,6 @@ void loop()
 {
     SerialPacket lastPacket;
     while(readPacketFromSerial(&lastPacket)) {
-        echoPacketToSerial(&lastPacket);
+        sendPacketToSerial(&lastPacket);
     }
 }

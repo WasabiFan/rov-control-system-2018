@@ -8,7 +8,7 @@ struct SerialPacket {
     std::vector<std::string> parameters;
 };
 
-
-
 bool readPacketFromSerial(SerialPacket* out);
-void echoPacketToSerial(SerialPacket* packet);
+void sendPacketToSerial(SerialPacket* packet);
+
+void debugEchoPacketToSerial(SerialPacket* packet);

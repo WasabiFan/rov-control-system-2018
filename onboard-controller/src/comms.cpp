@@ -36,10 +36,22 @@ bool readPacketFromSerial(SerialPacket* resultPacket) {
     return false;
 }
 
-void echoPacketToSerial(SerialPacket* packet) {
+void sendPacketToSerial(SerialPacket* packet) {
+    Serial.print('!');
+    Serial.print(packet->type.c_str());
+
+    for(std::size_t i = 0; i < packet->parameters.size(); i++) {
+        Serial.print(' ');
+        Serial.print(packet->parameters[i].c_str());
+    }
+
+    Serial.print('\n');
+}
+
+void debugEchoPacketToSerial(SerialPacket* packet) {
     Serial.print("Packet type: ");
     Serial.println((*packet).type.c_str());
-    for(uint i = 0; i < (*packet).parameters.size(); i++) {
+    for(std::size_t i = 0; i < (*packet).parameters.size(); i++) {
         Serial.print("    [");
         Serial.print(i);
         Serial.print("]: ");
