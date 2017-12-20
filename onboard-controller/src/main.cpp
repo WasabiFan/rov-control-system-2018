@@ -2,6 +2,15 @@
 #include <Eigen.h>
 #include <Dense>
 
+#include "comms.h"
+
+// https://forum.pjrc.com/threads/29177-Teensy-3-1-signalr-c-(-text-_kill_r-0xe)-undefined-reference-to-_kill-error
+extern "C"{
+  int _getpid() { return -1;}
+  int _kill(int pid, int sig) { return -1; }
+  int _write() {return -1;}
+}
+
 using namespace Eigen;
 typedef Matrix<float, 6, 1> Vector6f;
 
@@ -9,10 +18,12 @@ Matrix<float, 6, 6> intrinsics = Matrix<float, 6, 6>::Random();
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(9600);
+
     while(!Serial);
     Serial.println("Running...");
 
+    /*
     // Throwaway variable to consume result and prevent the operation from being optimized away
     double x = 0;
 
@@ -25,9 +36,13 @@ void setup()
     Serial.println("Done");
     uint32_t duration = millis() - start;
     Serial.println(x);
-    Serial.println(duration);
+    Serial.println(duration);*/
 }
 
 void loop()
 {
+    SerialPacket lastPacket;
+    while(readPacketFromSerial(&lastPacket)) {
+        echoPacketToSerial(&lastPacket);
+    }
 }
