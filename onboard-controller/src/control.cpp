@@ -4,7 +4,7 @@
 
 #include <Arduino.h>
 
-void Control::updateThrusterOutputs(Vector6f thrusterOutputs)
+void Control::updateThrusterOutputs(Eigen::Vector6f thrusterOutputs)
 {
     
     if(!this->controlState.isEnabled)
@@ -44,10 +44,10 @@ void Control::init()
     this->stopAllOutputs();
 }
 
-void Control::updateRequestedRigidForces(Vector6f newForces)
+void Control::updateRequestedRigidForces(Eigen::Vector6f newForces)
 {
     // TODO: Can result of "fullPivLu" call be cached?
-    Vector6f thrusterOutputs = this->intrinsics.fullPivLu().solve(newForces);
+    Eigen::Vector6f thrusterOutputs = this->intrinsics.fullPivLu().solve(newForces);
     this->updateThrusterOutputs(thrusterOutputs);
 }
 

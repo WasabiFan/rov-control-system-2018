@@ -23,14 +23,14 @@ class Control
     ControlState controlState;
 
     // TODO: don't use random intrinsics
-    Matrix<float, 6, 6> intrinsics = Matrix<float, 6, 6>::Random();
+    Eigen::Matrix<float, 6, 6> intrinsics = Eigen::Matrix<float, 6, 6>::Random();
     const ThrusterIO thrusterIO[NUM_THRUSTERS] = {};
 
-    void updateThrusterOutputs(Vector6f thrusterOutputs);
+    void updateThrusterOutputs(Eigen::Vector6f thrusterOutputs);
     void stopAllOutputs();
 
   public:
     void init();
-    void updateRequestedRigidForces(Vector6f newForces);
+    void updateRequestedRigidForces(Eigen::Vector6f newForces);
     void disable();
 };
