@@ -1,8 +1,6 @@
 #include <string>
 #include <vector>
 
-#include <Arduino.h>
-
 struct SerialPacket
 {
     std::string type;

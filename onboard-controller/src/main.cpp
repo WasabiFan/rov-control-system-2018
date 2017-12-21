@@ -13,8 +13,11 @@ void setup()
 {
     Serial.begin(9600);
 
+    // TODO: Remove blocking loop
     while(!Serial);
     Serial.println("Running...");
+
+    control.init();
 
     /*
     // Throwaway variable to consume result and prevent the operation from being optimized away

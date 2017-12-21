@@ -1,7 +1,10 @@
 #include "comms.h"
+
 #include <iostream>
 #include <sstream>
 #include <iterator>
+
+#include <Arduino.h>
 
 bool Comms::readPacketFromSerial(SerialPacket *resultPacket)
 {

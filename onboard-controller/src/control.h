@@ -1,9 +1,20 @@
 #include "common.h"
 
+#define NUM_THRUSTERS 6
+
+#if NUM_THRUSTERS != 6
+#error "Square matrix is required. Please invent another dimension."
+#endif
+
 struct ControlState
 {
     bool isEnabled = false;
-    Vector6f rigidForces;
+};
+
+struct ThrusterIO
+{
+  uint8_t pwmPin;
+  uint8_t dirPin;
 };
 
 class Control
@@ -13,7 +24,13 @@ class Control
 
     // TODO: don't use random intrinsics
     Matrix<float, 6, 6> intrinsics = Matrix<float, 6, 6>::Random();
+    const ThrusterIO thrusterIO[NUM_THRUSTERS] = {};
+
+    void updateThrusterOutputs(Vector6f thrusterOutputs);
+    void stopAllOutputs();
 
   public:
+    void init();
+    void updateRequestedRigidForces(Vector6f newForces);
     void disable();
 };
