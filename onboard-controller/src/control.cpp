@@ -44,10 +44,21 @@ void Control::init()
     this->stopAllOutputs();
 }
 
-void Control::updateRequestedRigidForces(Eigen::Vector6f newForces)
+void Control::updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct)
 {
     // TODO: Can result of "fullPivLu" call be cached?
-    Eigen::Vector6f thrusterOutputs = this->intrinsics.fullPivLu().solve(newForces);
+    Eigen::Vector6f thrusterOutputs = this->intrinsics.fullPivLu().solve(newForcesPct);
+
+    float absMax = std::max(thrusterOutputs.maxCoeff(), std::fabs(thrusterOutputs.minCoeff()));
+    if(absMax > 1) {
+        thrusterOutputs /= absMax;
+        this->telemetryInfo.isScalingAtLimit = true;
+        this->telemetryInfo.limitScaleFactor = absMax;
+    }
+    else {
+        this->telemetryInfo.isScalingAtLimit = false;
+    }
+
     this->updateThrusterOutputs(thrusterOutputs);
 }
 
@@ -55,4 +66,14 @@ void Control::disable()
 {
     this->controlState.isEnabled = false;
     this->stopAllOutputs();
+}
+
+bool Control::isEnabled()
+{
+    return this->controlState.isEnabled;
+}
+
+TelemetryInfo Control::getTelemetryInfo()
+{
+    return this->telemetryInfo;
 }

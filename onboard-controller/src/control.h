@@ -8,7 +8,13 @@
 
 struct ControlState
 {
-    bool isEnabled = false;
+  bool isEnabled = false;
+};
+
+struct TelemetryInfo
+{
+  bool isScalingAtLimit = false;
+  float limitScaleFactor;
 };
 
 struct ThrusterIO
@@ -19,18 +25,22 @@ struct ThrusterIO
 
 class Control
 {
-  private:
-    ControlState controlState;
+private:
+  ControlState controlState;
+  TelemetryInfo telemetryInfo;
 
-    // TODO: don't use random intrinsics
-    Eigen::Matrix<float, 6, 6> intrinsics = Eigen::Matrix<float, 6, 6>::Random();
-    const ThrusterIO thrusterIO[NUM_THRUSTERS] = {};
+  // TODO: don't use random intrinsics
+  Eigen::Matrix<float, 6, 6> intrinsics = Eigen::Matrix<float, 6, 6>::Random();
+  const ThrusterIO thrusterIO[NUM_THRUSTERS] = {};
 
-    void updateThrusterOutputs(Eigen::Vector6f thrusterOutputs);
-    void stopAllOutputs();
+  void updateThrusterOutputs(Eigen::Vector6f thrusterOutputs);
+  void stopAllOutputs();
 
-  public:
-    void init();
-    void updateRequestedRigidForces(Eigen::Vector6f newForces);
-    void disable();
+public:
+  void init();
+  void updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct);
+  void disable();
+
+  bool isEnabled();
+  TelemetryInfo getTelemetryInfo();
 };
