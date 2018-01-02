@@ -5,9 +5,55 @@
     xmlns:local="using:RovOperatorInterface"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:RovOperatorInterface.Controls"
+    Loaded="Page_Loaded"
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <SplitView DisplayMode="Inline" IsPaneOpen="True" PanePlacement="Right">
+            <SplitView.Pane>
+                <StackPanel Padding="10">
+                    <TextBlock Text="CONFIGURATION" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,5" FontWeight="Black"/>
 
+                    <TextBlock Text="Local devices" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,5"/>
+                    <controls:GamepadSelector x:Name="GamepadSelector" Margin="0,0,0,5"/>
+                    <controls:WebcamSelector x:Name="WebcamSelector" Margin="0,0,0,5" />
+
+                    <TextBlock Text="Remote Connection" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,5"/>
+                    <TextBox Header="Host name" Text="{Binding RovHostName, Mode=TwoWay}" Margin="0,0,0,5"/>
+                    <TextBox Header="Service name" Text="{Binding RovServiceName, Mode=TwoWay}" Margin="0,0,0,5"/>
+                    <Button Name="ConnectButton" Content="{Binding ConnectButtonText}" IsEnabled="{Binding IsConnectButtonEnabled}" Click="ConnectButton_Click" Margin="0,0,0,5" />
+                    <ToggleButton Content="Enable" IsChecked="{Binding IsRovEnabled, Mode=OneWay}" IsEnabled="{Binding IsEnableButtonEnabled}" Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" Margin="0,0,0,5"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="Mean round trip time: "/>
+                        <TextBlock Text="{Binding MeanTransitTime, TargetNullValue=&lt;unknown\&gt;}"/>
+                    </StackPanel>
+
+                    <ToggleButton Content="Use IMU" IsChecked="{Binding IsImuEnabled, Mode=TwoWay}" Margin="0,0,0,5"/>
+
+                    <TextBlock Text="LOGS" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,5" FontWeight="Black"/>
+                    <ListView Name="LogListView" ItemsSource="{Binding LogMessages}">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}"/>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </SplitView.Pane>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="4*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <CaptureElement Name="PreviewControl" Stretch="Uniform" Margin="-10,0,10,0" Grid.ColumnSpan="2" Grid.RowSpan="2"/>
+                <controls:ArtificialHorizon Grid.Column="1" Grid.Row="1" x:Name="FirstPersonArtificialHorizon" DataContext="{Binding ElementName=WindowContainer, Path=DataContext}" />
+            </Grid>
+        </SplitView>
     </Grid>
 </Page>
