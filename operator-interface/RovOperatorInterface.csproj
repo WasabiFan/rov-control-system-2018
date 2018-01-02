@@ -98,6 +98,12 @@
     <Compile Include="Controls\ArtificialHorizon.xaml.cs">
       <DependentUpon>ArtificialHorizon.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\GamepadSelector.xaml.cs">
+      <DependentUpon>GamepadSelector.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WebcamSelector.xaml.cs">
+      <DependentUpon>WebcamSelector.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -125,6 +131,14 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="Controls\ArtificialHorizon.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\GamepadSelector.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Controls\WebcamSelector.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
