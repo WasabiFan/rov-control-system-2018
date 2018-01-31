@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -51,43 +52,51 @@ namespace RovOperatorInterface.Controls
         public static DependencyProperty LevelLineMaxDeflectionProperty = DependencyProperty.Register(nameof(LevelLineMaxDeflection), typeof(double), typeof(ArtificialHorizon), new PropertyMetadata(30d, (sourceObject, e) => (sourceObject as ArtificialHorizon).RebuildLevelLines()));
         public static DependencyProperty LevelLineIntervalProperty = DependencyProperty.Register(nameof(LevelLineInterval), typeof(double), typeof(ArtificialHorizon), new PropertyMetadata(10d, (sourceObject, e) => (sourceObject as ArtificialHorizon).RebuildLevelLines()));
 
+        private const string ArtificialHorizonPropertyDescription = "Artificial Horizon";
+
+        [Description(ArtificialHorizonPropertyDescription)]
         public Mode ViewMode
         {
             get => ((Mode)(base.GetValue(ViewModeProperty)));
             set => base.SetValue(ViewModeProperty, value);
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         public double Roll
         {
             get => ((double)(base.GetValue(RollProperty)));
             set => base.SetValue(RollProperty, value);
         }
 
-
+        [Description(ArtificialHorizonPropertyDescription)]
         public double Pitch
         {
             get => ((double)(base.GetValue(PitchProperty)));
             set => base.SetValue(PitchProperty, value);
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         public double ViewingDistance
         {
             get => ((double)(base.GetValue(ViewingDistanceProperty)));
             set => base.SetValue(ViewingDistanceProperty, value);
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         public double LevelLineMaxDeflection
         {
             get => ((double)(base.GetValue(LevelLineMaxDeflectionProperty)));
             set => base.SetValue(LevelLineMaxDeflectionProperty, value);
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         public double LevelLineInterval
         {
             get => ((double)(base.GetValue(LevelLineIntervalProperty)));
             set => base.SetValue(LevelLineIntervalProperty, value);
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         public ArtificialHorizon()
         {
             this.InitializeComponent();
@@ -95,17 +104,20 @@ namespace RovOperatorInterface.Controls
 
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             UpdateAll();
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         private void UpdateAll()
         {
             RebuildLevelLines();
             UpdateOrientation();
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         private Line GenerateLevelLine(double angle)
         {
             double YPosition = (1 + Math.Tan(angle * Math.PI / 180) * ViewingDistance) * LevelLineContainer.ActualHeight / 2;
@@ -121,6 +133,7 @@ namespace RovOperatorInterface.Controls
             };
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         private void RebuildLevelLines()
         {
             LevelLineContainer.Children.Clear();
@@ -135,6 +148,7 @@ namespace RovOperatorInterface.Controls
             }
         }
 
+        [Description(ArtificialHorizonPropertyDescription)]
         private void UpdateOrientation()
         {
             double HorizontalRotation = ViewMode == Mode.FirstPerson ? Roll : Pitch;
