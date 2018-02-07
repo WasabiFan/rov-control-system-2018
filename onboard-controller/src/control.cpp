@@ -15,7 +15,7 @@ void Control::updateThrusterOutputs(Eigen::Vector6f thrusterOutputs)
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
         int pwmValue = map(thrusterOutputs[i], -1, 1, THRUSTER_MIN_DUTY_CYCLE, THRUSTER_MAX_DUTY_CYCLE);
-        analogWrite(this->thrusterIO[i].pwmPin, pwmValue);
+        analogWrite(this->design.thrusters[i].pwmPin, pwmValue);
     }
 }
 
@@ -23,17 +23,26 @@ void Control::stopAllOutputs()
 {
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
-        analogWrite(this->thrusterIO[i].pwmPin, 0);
+        analogWrite(this->design.thrusters[i].pwmPin, 0);
     }
 }
 
-void Control::init()
-{
+void Control::init(DesignInfo& design)
+{   
+    this->design = design;
+
+    for (int col = 0; col < NUM_THRUSTERS; col++) {
+        this->intrinsics.block(0, col, 3, 1) = this->design.thrusters[col].orientation.normalized();
+
+        auto comRelativePosition = this->design.thrusters[col].position - this->design.centerOfMass;
+        this->intrinsics.block(3, col, 3, 1) = comRelativePosition.cross(this->design.thrusters[col].orientation.normalized());
+    }
+
     analogWriteResolution(PWM_PRECISION_BITS);
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
-        analogWriteFrequency(this->thrusterIO[i].pwmPin, THRUSTER_BASE_FREQUENCY);
-        pinMode(this->thrusterIO[i].pwmPin, OUTPUT);
+        analogWriteFrequency(this->design.thrusters[i].pwmPin, THRUSTER_BASE_FREQUENCY);
+        pinMode(this->design.thrusters[i].pwmPin, OUTPUT);
     }
 
     this->stopAllOutputs();
@@ -71,4 +80,13 @@ bool Control::isEnabled()
 TelemetryInfo Control::getTelemetryInfo()
 {
     return this->telemetryInfo;
+}
+
+std::string Control::getIntrinsicsDebugInfo()
+{
+    std::ostringstream s;
+    s << "Intrinsics: =======================" << std::endl;
+    s << this->intrinsics;
+    s << "===================================" << std::endl;
+    return s.str();
 }

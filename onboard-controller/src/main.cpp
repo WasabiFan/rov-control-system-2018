@@ -19,7 +19,18 @@ void setup()
     while(!Serial);
     Serial.println("Running...");
 
-    //control.init();
+    DesignInfo design;
+    design.centerOfMass = Eigen::Vector3f(0, 0, 0);
+    design.thrusters = {{
+        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
+        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
+        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
+        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
+        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
+        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) }
+    }};
+    control.init(design);
+    Serial.println(control.getIntrinsicsDebugInfo().c_str());
 
     /*
     // Throwaway variable to consume result and prevent the operation from being optimized away

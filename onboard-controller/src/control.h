@@ -27,9 +27,17 @@ struct TelemetryInfo
   float limitScaleFactor;
 };
 
-struct ThrusterIO
+struct Thruster
 {
   uint8_t pwmPin;
+  Eigen::Vector3f position;
+  Eigen::Vector3f orientation;
+};
+
+struct DesignInfo
+{
+  std::array<Thruster, NUM_THRUSTERS> thrusters;
+  Eigen::Vector3f centerOfMass;
 };
 
 class Control
@@ -37,19 +45,20 @@ class Control
 private:
   ControlState controlState;
   TelemetryInfo telemetryInfo;
+  DesignInfo design;
 
   // TODO: don't use random intrinsics
-  Eigen::Matrix<float, 6, 6> intrinsics = Eigen::Matrix<float, 6, 6>::Random();
-  const ThrusterIO thrusterIO[NUM_THRUSTERS] = {};
+  Eigen::Matrix<float, 6, 6> intrinsics;
 
   void updateThrusterOutputs(Eigen::Vector6f thrusterOutputs);
   void stopAllOutputs();
 
 public:
-  void init();
+  void init(DesignInfo& design);
   void updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct);
   void disable();
 
   bool isEnabled();
   TelemetryInfo getTelemetryInfo();
+  std::string getIntrinsicsDebugInfo();
 };
