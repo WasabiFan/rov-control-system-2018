@@ -95,6 +95,8 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Communication\RovConnector.cs" />
+    <Compile Include="Communication\SerialMessage.cs" />
     <Compile Include="Controls\ArtificialHorizon.xaml.cs">
       <DependentUpon>ArtificialHorizon.xaml</DependentUpon>
     </Compile>
