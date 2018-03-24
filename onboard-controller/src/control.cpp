@@ -6,7 +6,6 @@
 
 void Control::updateThrusterOutputs(Eigen::Vector6f thrusterOutputs)
 {
-    
     if(!this->controlState.isEnabled)
     {
         this->stopAllOutputs();
@@ -15,11 +14,8 @@ void Control::updateThrusterOutputs(Eigen::Vector6f thrusterOutputs)
 
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
-        digitalWriteFast(this->thrusterIO[i].dirPin, thrusterOutputs[i] > 0 ? HIGH : LOW);
-
-        // TODO: think about scaling
-        uint8_t dutyCycle = map(std::fabs(thrusterOutputs[i]), 0, 1, 0, 256);
-        analogWrite(this->thrusterIO[i].pwmPin, dutyCycle);
+        int pwmValue = map(thrusterOutputs[i], -1, 1, THRUSTER_MIN_DUTY_CYCLE, THRUSTER_MAX_DUTY_CYCLE);
+        analogWrite(this->thrusterIO[i].pwmPin, pwmValue);
     }
 }
 
@@ -27,17 +23,16 @@ void Control::stopAllOutputs()
 {
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
-        digitalWriteFast(this->thrusterIO[i].dirPin, LOW);
         analogWrite(this->thrusterIO[i].pwmPin, 0);
     }
 }
 
 void Control::init()
 {
-    // TODO: Tune frequency and resolution
+    analogWriteResolution(PWM_PRECISION_BITS);
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
-        pinMode(this->thrusterIO[i].dirPin, OUTPUT);
+        analogWriteFrequency(this->thrusterIO[i].pwmPin, THRUSTER_BASE_FREQUENCY);
         pinMode(this->thrusterIO[i].pwmPin, OUTPUT);
     }
 

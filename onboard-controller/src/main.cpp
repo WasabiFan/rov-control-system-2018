@@ -19,7 +19,7 @@ void setup()
     while(!Serial);
     Serial.println("Running...");
 
-    control.init();
+    //control.init();
 
     /*
     // Throwaway variable to consume result and prevent the operation from being optimized away
@@ -79,6 +79,7 @@ bool handleControlPacket(std::vector<std::string> parameters)
         }
     }
     control.updateRequestedRigidForcesPct(rigidForcesPct);
+    return true;
 }
 
 void loop()

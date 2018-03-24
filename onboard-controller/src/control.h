@@ -6,6 +6,16 @@
 #error "Square matrix is required. Please invent another dimension."
 #endif
 
+#define PWM_PRECISION_BITS 12
+#define PWM_RANGE_MAX ((1 << PWM_PRECISION_BITS) - 1)
+
+#define THRUSTER_MIN_TIME_S (1e-3)
+#define THRUSTER_MAX_TIME_S (2e-3)
+
+#define THRUSTER_BASE_FREQUENCY (1/(THRUSTER_MAX_TIME_S*1.1))
+#define THRUSTER_MIN_DUTY_CYCLE (THRUSTER_MIN_TIME_S*THRUSTER_BASE_FREQUENCY*PWM_RANGE_MAX)
+#define THRUSTER_MAX_DUTY_CYCLE (THRUSTER_MAX_TIME_S*THRUSTER_BASE_FREQUENCY*PWM_RANGE_MAX)
+
 struct ControlState
 {
   bool isEnabled = false;
@@ -20,7 +30,6 @@ struct TelemetryInfo
 struct ThrusterIO
 {
   uint8_t pwmPin;
-  uint8_t dirPin;
 };
 
 class Control
