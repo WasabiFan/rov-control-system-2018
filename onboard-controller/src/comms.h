@@ -17,8 +17,11 @@ private:
   uint32_t lastReceiveTime = 0;
 
 public:
+  void initialize();
   bool readPacketFromSerial(SerialPacket *out);
   void sendPacketToSerial(SerialPacket *packet);
+
+  void sendRawMessageToSerial(std::string string);
 
   void debugEchoPacketToSerial(SerialPacket *packet);
 

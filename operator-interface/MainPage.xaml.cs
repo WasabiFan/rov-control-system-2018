@@ -1,4 +1,5 @@
 ﻿using RovOperatorInterface.Controls;
+using RovOperatorInterface.Core;
 using RovOperatorInterface.Utils;
 using System;
 using System.Collections.Generic;
@@ -39,8 +40,7 @@ namespace RovOperatorInterface
         private DisplayRequest DisplayRequest;
         private bool IsStreamingVideo = false;
 
-        private Queue<long> TransitTimeHistory = new Queue<long>();
-        private TimeoutFlag ConnectionTimeout = new TimeoutFlag(TimeSpan.FromSeconds(0.1));
+        RovController Controller;
 
         public MainPage()
         {
@@ -49,6 +49,8 @@ namespace RovOperatorInterface
 
             Window.Current.CoreWindow.KeyDown += Page_KeyRouted;
             Window.Current.CoreWindow.KeyUp += Page_KeyRouted;
+
+            Controller = new RovController();
 
             InputTimer = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(30) };
             InputTimer.Tick += InputTimer_Tick;
@@ -123,47 +125,20 @@ namespace RovOperatorInterface
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
             {
-                // var Reading = GamepadSelector.SelectedGamepad?.GetCurrentReading();
+                var Reading = GamepadSelector.SelectedGamepad?.GetCurrentReading();
+                await Controller.UpdateControlInput(Reading);
             });
         }
 
         private async void Page_Loaded(object sender, RoutedEventArgs e)
         {
             await StartPreviewAsync(WebcamSelector.SelectedWebcam);
+            Controller.Initialize();
         }
 
         private async void WebcamSelector_WebcamSelectionChanged(object sender, WebcamSelectedEventArgs e)
         {
             await StartPreviewAsync(e.SelectedWebcam);
-        }
-
-        private void GamepadSelector_GamepadSelectionChanged(object sender, GamepadSelectedEventArgs e)
-        {
-
-        }
-
-        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                ViewModel.ConnectionState = MainPageViewModel.RovConnectionState.Connecting;
-                // TODO: Connect
-                ViewModel.ConnectionState = MainPageViewModel.RovConnectionState.Connected;
-            }
-            catch (Exception ex)
-            {
-                ViewModel.ConnectionState = MainPageViewModel.RovConnectionState.NotConnected;
-            }
-        }
-
-        private async void ToggleButton_Checked(object sender, RoutedEventArgs e)
-        {
-            // TODO
-        }
-
-        private async void ToggleButton_Unchecked(object sender, RoutedEventArgs e)
-        {
-            // TODO
         }
 
         private void Page_KeyRouted(Windows.UI.Core.CoreWindow sender, Windows.UI.Core.KeyEventArgs args)
@@ -172,6 +147,16 @@ namespace RovOperatorInterface
             {
                 args.Handled = true;
             }
+        }
+
+        private void EnableToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            // TODO
+        }
+
+        private void EnableToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            // TODO
         }
     }
 }

@@ -7,12 +7,18 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.SerialCommunication;
+using Windows.Storage.Streams;
 
 namespace RovOperatorInterface.Communication
 {
     public class MessageReceivedEventArgs : EventArgs
     {
         public SerialMessage Message { get; set; }
+    }
+
+    public class RawStringReceivedEventArgs : EventArgs
+    {
+        public string Text { get; set; }
     }
 
     class RovConnector
@@ -26,6 +32,9 @@ namespace RovOperatorInterface.Communication
         Connection OpenConnection = null;
 
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+        public event EventHandler<RawStringReceivedEventArgs> RawStringReceived;
+
+        public bool IsConnected => OpenConnection != null;
 
         public RovConnector()
         {
@@ -41,8 +50,9 @@ namespace RovOperatorInterface.Communication
             if (OpenConnection == null)
             {
                 OpenConnection = new Connection(args.Id,
-                    message => MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Message = message }
-                ));
+                    message => MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Message = message }),
+                    rawString => RawStringReceived?.Invoke(this, new RawStringReceivedEventArgs() { Text = rawString })
+                );
                 OpenConnection.Open();
             }
             else
@@ -57,23 +67,36 @@ namespace RovOperatorInterface.Communication
             Watcher.Start();
         }
 
+        public void Send(SerialMessage message)
+        {
+            if (!IsConnected)
+            {
+                throw new InvalidOperationException();
+            }
+
+            OpenConnection.Send(message);
+        }
+
         private class Connection
         {
-            private Task ReadTask;
-            private StreamWriter Writer;
+            private Task IoTask;
 
             private readonly string Id;
-            private readonly Action<SerialMessage> OnReceived;
+            private readonly Action<SerialMessage> OnMessageReceived;
+            private readonly Action<string> OnRawStringReceived;
+            
+            private DataWriter Writer;
 
-            public Connection(string id, Action<SerialMessage> onReceived)
+            public Connection(string id, Action<SerialMessage> onMessageReceived, Action<string> onRawStringReceived)
             {
                 Id = id;
-                OnReceived = onReceived;
+                OnMessageReceived = onMessageReceived;
+                OnRawStringReceived = onRawStringReceived;
             }
 
             public async void Open()
             {
-                if (ReadTask != null || Writer != null)
+                if (IoTask != null)
                 {
                     throw new InvalidOperationException();
                 }
@@ -87,39 +110,47 @@ namespace RovOperatorInterface.Communication
                 ConnectedDevice.WriteTimeout = TimeSpan.FromMilliseconds(10);
                 ConnectedDevice.ReadTimeout = TimeSpan.FromMilliseconds(10);
 
-                Writer = new StreamWriter(ConnectedDevice.OutputStream.AsStreamForWrite())
-                {
-                    NewLine = "\n"
-                };
+                Writer = new DataWriter(ConnectedDevice.OutputStream);
 
-                ReadTask = Task.Run(async () =>
+                // TODO: exception handling in loop
+                IoTask = Task.Run(async () =>
                 {
-
-                    StreamReader reader = new StreamReader(ConnectedDevice.InputStream.AsStreamForRead());
+                    DataReader reader = new DataReader(ConnectedDevice.InputStream);
+                    StringBuilder builder = new StringBuilder();
                     while (true)
                     {
-                        string line = await reader.ReadLineAsync();
-                        if (SerialMessage.TryParse(line, out SerialMessage message))
+                        // TODO: investigate larger chunks
+                        await reader.LoadAsync(1);
+                        char nextChar = reader.ReadString(1)[0];
+                        if (nextChar == '\n')
                         {
-                            OnReceived(message);
+                            string line = builder.ToString();
+                            builder.Clear();
+                            if (SerialMessage.TryParse(line, out SerialMessage message))
+                            {
+                                OnMessageReceived(message);
+                            }
+                            else
+                            {
+                                OnRawStringReceived(line);
+                            }
                         }
                         else
                         {
-                            // TODO
-                            Debug.WriteLine("Error while parsing incoming content as message");
+                            builder.Append(nextChar);
                         }
                     }
                 });
             }
-
-            public async void Send(SerialMessage message)
+            
+            public void Send(SerialMessage message)
             {
-                if (ReadTask == null || Writer == null)
+                if (IoTask == null)
                 {
                     throw new InvalidOperationException();
                 }
 
-                await Writer.WriteLineAsync(message.Serialize());
+                Writer.WriteString(message.Serialize() + "\n");
             }
         }
     }

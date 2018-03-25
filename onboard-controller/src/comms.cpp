@@ -6,6 +6,11 @@
 
 #include <Arduino.h>
 
+void Comms::initialize()
+{
+    Serial.begin(9600);
+}
+
 bool Comms::readPacketFromSerial(SerialPacket *resultPacket)
 {
     while (Serial.available())
@@ -45,28 +50,34 @@ bool Comms::readPacketFromSerial(SerialPacket *resultPacket)
 
 void Comms::sendPacketToSerial(SerialPacket *packet)
 {
-    Serial.print('!');
-    Serial.print(packet->type.c_str());
+    std::ostringstream ss;
+    ss << '!' << packet->type;
 
     for (std::size_t i = 0; i < packet->parameters.size(); i++)
     {
-        Serial.print(' ');
-        Serial.print(packet->parameters[i].c_str());
+        ss << ' ' << packet->parameters[i];
     }
+    sendRawMessageToSerial(ss.str());
+}
 
-    Serial.print('\n');
+void Comms::sendRawMessageToSerial(std::string string)
+{
+    Serial.print(string.c_str());
+    Serial.print("\n");
 }
 
 void Comms::debugEchoPacketToSerial(SerialPacket *packet)
 {
     Serial.print("Packet type: ");
-    Serial.println((*packet).type.c_str());
+    Serial.print((*packet).type.c_str());
+    Serial.print("\n");
     for (std::size_t i = 0; i < (*packet).parameters.size(); i++)
     {
         Serial.print("    [");
         Serial.print(i);
         Serial.print("]: ");
-        Serial.println((*packet).parameters[i].c_str());
+        Serial.print((*packet).parameters[i].c_str());
+        Serial.print("\n");
     }
 }
 

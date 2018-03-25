@@ -106,6 +106,8 @@
     <Compile Include="Controls\WebcamSelector.xaml.cs">
       <DependentUpon>WebcamSelector.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Core\RovController.cs" />
+    <Compile Include="Core\SerialMessageMalformedException.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>

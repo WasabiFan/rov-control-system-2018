@@ -13,11 +13,11 @@ Control control;
 
 void setup()
 {
-    Serial.begin(9600);
+    comms.initialize();
 
     // TODO: Remove blocking loop
-    while(!Serial);
-    Serial.println("Running...");
+    //while(!Serial);
+    //Serial.println("Running...");
 
     DesignInfo design;
     design.centerOfMass = Eigen::Vector3f(0, 0, 0);
@@ -74,7 +74,7 @@ void sendTelemetry()
     comms.sendPacketToSerial(&telemetryPacket);
 }
 
-bool handleControlPacket(std::vector<std::string> parameters)
+bool handleMotionControlPacket(std::vector<std::string> parameters)
 {
     if(parameters.size() != 6)
     {
@@ -99,9 +99,9 @@ void loop()
     while(comms.readPacketFromSerial(&lastPacket))
     {
         // TODO: Prevent blocking loop for too long
-        if(lastPacket.type == "control")
+        if(lastPacket.type == "motion_control")
         {
-            if(!handleControlPacket(lastPacket.parameters))
+            if(!handleMotionControlPacket(lastPacket.parameters))
             {
                 // TODO
             }

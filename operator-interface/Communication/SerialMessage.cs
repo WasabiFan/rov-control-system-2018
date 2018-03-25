@@ -20,7 +20,7 @@ namespace RovOperatorInterface.Communication
             message = new SerialMessage
             {
                 Type = allParts.First().Substring(1),
-                Parameters = Enumerable.ToList(allParts.Skip(1))
+                Parameters = allParts.Skip(1).ToArray()
             };
             return true;
         }
@@ -30,7 +30,13 @@ namespace RovOperatorInterface.Communication
             return $"!{Type}{String.Join("", Parameters.Select(s => $" {s}"))}";
         }
 
+        public SerialMessage(string type, params string[] parameters)
+        {
+            this.Type = type;
+            this.Parameters = parameters;
+        }
+
         public string Type { get; private set; }
-        public IReadOnlyCollection<string> Parameters { get; private set; }
+        public string[] Parameters { get; private set; }
     }
 }
