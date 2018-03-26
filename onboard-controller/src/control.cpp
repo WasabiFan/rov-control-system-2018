@@ -61,8 +61,10 @@ void Control::updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct)
     }
     else {
         this->telemetryInfo.isScalingAtLimit = false;
+        this->telemetryInfo.limitScaleFactor = 1;
     }
 
+    this->telemetryInfo.lastOutputs = thrusterOutputs;
     this->updateThrusterOutputs(thrusterOutputs);
 }
 
@@ -86,7 +88,7 @@ std::string Control::getIntrinsicsDebugInfo()
 {
     std::ostringstream s;
     s << "Intrinsics: =======================" << std::endl;
-    s << this->intrinsics;
+    s << this->intrinsics << std::endl;
     s << "===================================" << std::endl;
     return s.str();
 }

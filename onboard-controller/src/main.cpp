@@ -8,12 +8,15 @@
 
 #define DISABLE_TIMEOUT (5000)
 
+#define LOOP_FREQUENCY (100)
+
 Comms comms;
 Control control;
 
 void setup()
 {
     comms.initialize();
+    DEBUG_SERIAL_BEGIN();
 
     // TODO: Remove blocking loop
     //while(!Serial);
@@ -22,12 +25,12 @@ void setup()
     DesignInfo design;
     design.centerOfMass = Eigen::Vector3f(0, 0, 0);
     design.thrusters = {{
-        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
-        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
-        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
-        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
-        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) },
-        { 0, Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 0) }
+        { 30, Eigen::Vector3f(1, 1, 0), Eigen::Vector3f(1, -1, 0) }, // Front right
+        { 29, Eigen::Vector3f(1, -1, 0), Eigen::Vector3f(1, 1, 0) }, // Front left
+        { 10, Eigen::Vector3f(-1, -1, 0), Eigen::Vector3f(1, -1, 0) }, // Rear left
+        { 9, Eigen::Vector3f(-1, 1, 0), Eigen::Vector3f(1, 1, 0) }, // Rear right
+        { 8, Eigen::Vector3f(1, 0, 0), Eigen::Vector3f(0, 0, 1) }, // Bottom front
+        { 7, Eigen::Vector3f(-1, 0, 0), Eigen::Vector3f(0, 0, 1) } // Bottom rear
     }};
     control.init(design);
     Serial.println(control.getIntrinsicsDebugInfo().c_str());
@@ -71,6 +74,11 @@ void sendTelemetry()
     SerialPacket telemetryPacket("telemetry");
     telemetryPacket.parameters.push_back(controlTelemetry.isScalingAtLimit ? "true" : "false");
     telemetryPacket.parameters.push_back(to_string(controlTelemetry.limitScaleFactor));
+
+    const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "", ",", "", "", "", "");
+    std::ostringstream stream;
+    stream << controlTelemetry.lastOutputs.format(fmt);
+    telemetryPacket.parameters.push_back(stream.str());
     comms.sendPacketToSerial(&telemetryPacket);
 }
 
@@ -95,6 +103,8 @@ bool handleMotionControlPacket(std::vector<std::string> parameters)
 
 void loop()
 {
+    unsigned long loopStart = millis();
+    
     SerialPacket lastPacket;
     while(comms.readPacketFromSerial(&lastPacket))
     {
@@ -103,6 +113,7 @@ void loop()
         {
             if(!handleMotionControlPacket(lastPacket.parameters))
             {
+                DEBUG_SERIAL_PRINTLN("Failed to handle motion control packet");
                 // TODO
             }
         }
@@ -119,6 +130,25 @@ void loop()
     }
 
     sendTelemetry();
+    unsigned long loopDuration = millis() - loopStart;
+    uint32_t targetLoopDuration = (uint32_t)(1000/float(LOOP_FREQUENCY));
+    int32_t timeRemaining = targetLoopDuration - loopDuration;
+
+    if (timeRemaining > 0) 
+    {
+        //DEBUG_SERIAL_PRINT("Loop finished with ");
+        //DEBUG_SERIAL_PRINT(timeRemaining);
+        //DEBUG_SERIAL_PRINTLN(" msecs remaining");
+        delay(min((uint32_t)timeRemaining, targetLoopDuration));
+    }
+    else
+    {
+        DEBUG_SERIAL_PRINT("Loop finished having gone ");
+        DEBUG_SERIAL_PRINT(-timeRemaining);
+        DEBUG_SERIAL_PRINT(" msecs over target (");
+        DEBUG_SERIAL_PRINT(targetLoopDuration);
+        DEBUG_SERIAL_PRINTLN(" msecs)");
+    }
 }
 
 // https://forum.pjrc.com/threads/29177-Teensy-3-1-signalr-c-(-text-_kill_r-0xe)-undefined-reference-to-_kill-error

@@ -67,19 +67,19 @@ namespace RovOperatorInterface.Communication
             Watcher.Start();
         }
 
-        public void Send(SerialMessage message)
+        public async Task Send(SerialMessage message)
         {
             if (!IsConnected)
             {
                 throw new InvalidOperationException();
             }
 
-            OpenConnection.Send(message);
+            await OpenConnection.Send(message);
         }
 
         private class Connection
         {
-            private Task IoTask;
+            private Task ReadTask;
 
             private readonly string Id;
             private readonly Action<SerialMessage> OnMessageReceived;
@@ -96,13 +96,13 @@ namespace RovOperatorInterface.Communication
 
             public async void Open()
             {
-                if (IoTask != null)
+                if (ReadTask != null)
                 {
                     throw new InvalidOperationException();
                 }
 
                 SerialDevice ConnectedDevice = await SerialDevice.FromIdAsync(Id);
-                ConnectedDevice.BaudRate = 9600;
+                ConnectedDevice.BaudRate = 115200;
                 ConnectedDevice.StopBits = SerialStopBitCount.One;
                 ConnectedDevice.DataBits = 8;
                 ConnectedDevice.Parity = SerialParity.None;
@@ -113,44 +113,62 @@ namespace RovOperatorInterface.Communication
                 Writer = new DataWriter(ConnectedDevice.OutputStream);
 
                 // TODO: exception handling in loop
-                IoTask = Task.Run(async () =>
+                ReadTask = Task.Run(async () =>
                 {
                     DataReader reader = new DataReader(ConnectedDevice.InputStream);
                     StringBuilder builder = new StringBuilder();
                     while (true)
                     {
-                        // TODO: investigate larger chunks
-                        await reader.LoadAsync(1);
-                        char nextChar = reader.ReadString(1)[0];
-                        if (nextChar == '\n')
+                        try
                         {
-                            string line = builder.ToString();
-                            builder.Clear();
-                            if (SerialMessage.TryParse(line, out SerialMessage message))
+                            // TODO: investigate larger chunks
+                            var loadResult = await reader.LoadAsync(1);
+                            char nextChar = reader.ReadString(1)[0];
+                            if (nextChar == '\n')
                             {
-                                OnMessageReceived(message);
+                                string line = builder.ToString();
+                                Debug.WriteLine(Environment.TickCount + " " + line);
+                                if (SerialMessage.TryParse(line, out SerialMessage message))
+                                {
+                                    OnMessageReceived(message);
+                                }
+                                else
+                                {
+                                    OnRawStringReceived(line);
+                                }
+                                builder.Clear();
                             }
                             else
                             {
-                                OnRawStringReceived(line);
+                                builder.Append(nextChar);
                             }
                         }
-                        else
+                        // The operation attempted to access data outside the valid range
+                        catch (System.Runtime.InteropServices.COMException e) when (e.HResult == -2147483637)
                         {
-                            builder.Append(nextChar);
+                            // TODO
                         }
                     }
                 });
             }
             
-            public void Send(SerialMessage message)
+            public async Task Send(SerialMessage message)
             {
-                if (IoTask == null)
+                if (ReadTask == null)
                 {
                     throw new InvalidOperationException();
                 }
 
                 Writer.WriteString(message.Serialize() + "\n");
+                try
+                {
+                    await Writer.StoreAsync();
+                }
+                // The semaphore timeout period has expired. (Exception from HRESULT: 0x80070079)
+                catch (Exception e) when (e.HResult == -2147024775)
+                {
+                    // TODO: try again
+                }
             }
         }
     }

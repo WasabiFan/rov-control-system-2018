@@ -24,6 +24,9 @@
 
                     <ToggleButton Content="Use IMU" IsChecked="{Binding IsImuEnabled, Mode=TwoWay}" Margin="0,0,0,5"/>
 
+                    <TextBlock Text="TELEMETRY" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,5" FontWeight="Black"/>
+                    <TextBlock Text="{Binding TelemetryData, Mode=OneWay}" />
+
                     <TextBlock Text="LOGS" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,5" FontWeight="Black"/>
                     <ListView Name="LogListView" ItemsSource="{Binding LogMessages}">
                         <ListView.ItemTemplate>

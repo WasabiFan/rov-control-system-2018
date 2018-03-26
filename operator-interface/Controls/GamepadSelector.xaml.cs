@@ -65,8 +65,7 @@ namespace RovOperatorInterface.Controls
 
         private void GamepadSelectorDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (GamepadSelectionChanged != null)
-                GamepadSelectionChanged(this, new GamepadSelectedEventArgs(SelectedGamepad));
+            GamepadSelectionChanged?.Invoke(this, new GamepadSelectedEventArgs(SelectedGamepad));
         }
 
         public class GamepadViewModel
@@ -95,8 +94,7 @@ namespace RovOperatorInterface.Controls
                     if(_SelectedGamepad != value)
                     {
                         _SelectedGamepad = value;
-                        if (PropertyChanged != null)
-                            PropertyChanged(this, new PropertyChangedEventArgs(nameof(SelectedGamepad)));
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedGamepad)));
                     }
                 }
             }

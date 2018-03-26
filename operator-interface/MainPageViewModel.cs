@@ -28,6 +28,8 @@ namespace RovOperatorInterface
 
         private bool _IsConnected { get; set; }
 
+        private string _TelemetryData { get; set; }
+
         public ObservableCollection<string> LogMessages { get; protected set; } = new ObservableCollection<string>();
 
         public bool IsConnected
@@ -99,6 +101,19 @@ namespace RovOperatorInterface
                 {
                     _IsImuEnabled = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsImuEnabled)));
+                }
+            }
+        }
+        
+        public string TelemetryData
+        {
+            get { return _TelemetryData; }
+            set
+            {
+                if (value != _TelemetryData)
+                {
+                    _TelemetryData = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TelemetryData)));
                 }
             }
         }

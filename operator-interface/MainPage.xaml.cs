@@ -51,6 +51,10 @@ namespace RovOperatorInterface
             Window.Current.CoreWindow.KeyUp += Page_KeyRouted;
 
             Controller = new RovController();
+            Controller.TelemetryDataReceived += async (sender, e) =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => ViewModel.TelemetryData = e.Text);
+            };
 
             InputTimer = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(30) };
             InputTimer.Tick += InputTimer_Tick;

@@ -8,7 +8,7 @@
 
 void Comms::initialize()
 {
-    Serial.begin(9600);
+    Serial.begin(115200);
 }
 
 bool Comms::readPacketFromSerial(SerialPacket *resultPacket)

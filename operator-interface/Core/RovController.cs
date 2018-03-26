@@ -9,9 +9,16 @@ using Windows.Gaming.Input;
 
 namespace RovOperatorInterface.Core
 {
+    public class TelemetryDataReceivedEventArgs : EventArgs
+    {
+        public string Text { get; set; }
+    }
+
     class RovController
     {
         private RovConnector Connector;
+
+        public event EventHandler<RawStringReceivedEventArgs> TelemetryDataReceived;
 
         public RovController()
         {
@@ -32,17 +39,21 @@ namespace RovOperatorInterface.Core
 
         private void HandleTelemetryMessage(SerialMessage message)
         {
-            if (message.Parameters.Length != 2)
+            if (message.Parameters.Length != 3)
             {
-                throw new SerialMessageMalformedException($"Telemetry message has the incorrect number of params; expected 2, was {message.Parameters.Length}", message);
+                throw new SerialMessageMalformedException($"Telemetry message has the incorrect number of params; expected 3, was {message.Parameters.Length}", message);
             }
             
             bool.TryParse(message.Parameters[0], out bool IsScalingAtLimit);
             float.TryParse(message.Parameters[1], out float LimitScaleFactor);
+            string ThrusterOutputs = message.Parameters[2].Replace(",", ", ");
 
-            Debug.WriteLine($"Telemetry: {Environment.NewLine}"
+            string data = $"Telemetry: {Environment.NewLine}"
                 + $"\t{nameof(IsScalingAtLimit)}: {IsScalingAtLimit}{Environment.NewLine}"
-                + $"\t{nameof(LimitScaleFactor)}: {LimitScaleFactor}");
+                + $"\t{nameof(LimitScaleFactor)}: {LimitScaleFactor}{Environment.NewLine}"
+                + $"\t{nameof(ThrusterOutputs)}: {ThrusterOutputs}";
+
+            TelemetryDataReceived?.Invoke(this, new RawStringReceivedEventArgs() { Text = data });
         }
 
         private void Connector_MessageReceived(object sender, MessageReceivedEventArgs e)
@@ -70,7 +81,7 @@ namespace RovOperatorInterface.Core
                     reading?.RightThumbstickY,
                     reading?.RightThumbstickX
                 };
-                Connector.Send(new SerialMessage("motion_control", RigidForceCommands.Select(f => (f ?? 0).ToString()).ToArray()));
+                await Connector.Send(new SerialMessage("motion_control", RigidForceCommands.Select(f => (f ?? 0).ToString()).ToArray()));
             }
         }
     }

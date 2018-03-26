@@ -25,6 +25,7 @@ struct TelemetryInfo
 {
   bool isScalingAtLimit = false;
   float limitScaleFactor;
+  Eigen::Vector6f lastOutputs;
 };
 
 struct Thruster
