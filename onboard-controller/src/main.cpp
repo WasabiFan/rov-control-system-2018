@@ -25,12 +25,12 @@ void setup()
     DesignInfo design;
     design.centerOfMass = Eigen::Vector3f(0, 0, 0);
     design.thrusters = {{
-        { 30, Eigen::Vector3f(1, 1, 0), Eigen::Vector3f(1, -1, 0) }, // Front right
-        { 29, Eigen::Vector3f(1, -1, 0), Eigen::Vector3f(1, 1, 0) }, // Front left
-        { 10, Eigen::Vector3f(-1, -1, 0), Eigen::Vector3f(1, -1, 0) }, // Rear left
-        { 9, Eigen::Vector3f(-1, 1, 0), Eigen::Vector3f(1, 1, 0) }, // Rear right
-        { 8, Eigen::Vector3f(1, 0, 0), Eigen::Vector3f(0, 0, 1) }, // Bottom front
-        { 7, Eigen::Vector3f(-1, 0, 0), Eigen::Vector3f(0, 0, 1) } // Bottom rear
+        { 29, Eigen::Vector3f(1, 1, 0), Eigen::Vector3f(1, -1, 0) }, // Front right
+        { 7, Eigen::Vector3f(1, -1, 0), Eigen::Vector3f(1, 1, 0) }, // Front left
+        { 8, Eigen::Vector3f(-1, -1, 0), Eigen::Vector3f(1, -1, 0) }, // Rear left
+        { 10, Eigen::Vector3f(-1, 1, 0), Eigen::Vector3f(1, 1, 0) }, // Rear right
+        { 9, Eigen::Vector3f(0, 1, 0), Eigen::Vector3f(0, 0, -1) }, // Bottom front
+        { 30, Eigen::Vector3f(0, -1, 0), Eigen::Vector3f(0, 0, 1) } // Bottom rear
     }};
     control.init(design);
     Serial.println(control.getIntrinsicsDebugInfo().c_str());
