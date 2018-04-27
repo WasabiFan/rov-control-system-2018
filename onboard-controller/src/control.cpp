@@ -6,11 +6,11 @@
 
 void Control::updateThrusterOutputs(Eigen::Vector6f thrusterOutputs)
 {
-    if(!this->controlState.isEnabled)
+    /*if(!this->controlState.isEnabled)
     {
         this->stopAllOutputs();
         return;
-    }
+    }*/
 
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
@@ -28,7 +28,7 @@ void Control::stopAllOutputs()
 }
 
 void Control::init(DesignInfo& design)
-{   
+{
     this->design = design;
 
     for (int col = 0; col < NUM_THRUSTERS; col++) {
