@@ -78,7 +78,6 @@ namespace RovOperatorInterface
                         await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
                         {
                             await Capture.StartPreviewAsync();
-                            IsStreamingVideo = true;
 
                             DisplayRequest = new DisplayRequest();
                             DisplayRequest.RequestActive();
@@ -91,6 +90,7 @@ namespace RovOperatorInterface
                     {
                         // This will be thrown if the user denied access to the camera in privacy settings
                         System.Diagnostics.Debug.WriteLine("The app was denied access to the camera");
+                        Capture = null;
                     }
                     catch (Exception ex)
                     {
@@ -102,8 +102,6 @@ namespace RovOperatorInterface
 
         private async Task StopVideoStreamAsync()
         {
-            IsStreamingVideo = false;
-
             if (Capture != null)
                 await Capture.StopPreviewAsync();
 

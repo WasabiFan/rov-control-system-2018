@@ -17,7 +17,7 @@
 
                     <TextBlock Text="Local devices" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,5"/>
                     <controls:GamepadSelector x:Name="GamepadSelector" Margin="0,0,0,5"/>
-                    <controls:WebcamSelector x:Name="WebcamSelector" Margin="0,0,0,5" />
+                    <controls:WebcamSelector x:Name="WebcamSelector" WebcamSelectionChanged="WebcamSelector_WebcamSelectionChanged" Margin="0,0,0,5" />
 
                     <TextBlock Text="Remote Connection" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,5"/>
                     <ToggleButton Name="EnableToggle" Content="Enable" IsChecked="{Binding IsRovEnabled, Mode=OneWay}" IsEnabled="{Binding IsEnableButtonEnabled}" Checked="EnableToggle_Checked" Unchecked="EnableToggle_Unchecked" Margin="0,0,0,5"/>
