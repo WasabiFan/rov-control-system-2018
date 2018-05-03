@@ -15,6 +15,10 @@ Control control;
 
 void setup()
 {
+    // Illuminate built-in LED
+    pinMode(13, OUTPUT);
+    digitalWrite(13, HIGH);
+
     comms.initialize();
     DEBUG_SERIAL_BEGIN();
 
