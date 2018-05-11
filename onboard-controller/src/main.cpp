@@ -36,6 +36,13 @@ void setup()
         { 9, Eigen::Vector3f(0, 1, 0), Eigen::Vector3f(0, 0, -1) }, // Bottom front
         { 30, Eigen::Vector3f(0, -1, 0), Eigen::Vector3f(0, 0, 1) } // Bottom rear
     }};
+    design.gripperUpDownPin = 22;
+    design.gripperOpenClosePin = 23;
+    design.gimbalPin = 2;
+
+    design.minGimbalPosition = 0.3;
+    design.maxGimbalPosition = 0.7;
+
     control.init(design);
     Serial.println(control.getIntrinsicsDebugInfo().c_str());
 
@@ -105,6 +112,41 @@ bool handleMotionControlPacket(std::vector<std::string> parameters)
     return true;
 }
 
+bool handleGripperControlPacket(std::vector<std::string> parameters)
+{
+    if(parameters.size() != 2)
+    {
+        return false;
+    }
+
+    float upDown, openClose;
+    bool success = parseFloat(upDown, parameters[0]);
+    success &= parseFloat(openClose, parameters[1]);
+
+    if (!success) {
+        return false;
+    }
+
+    control.setGripperOutputs(upDown, openClose);
+    return true;
+}
+
+bool handleGimbalControlPacket(std::vector<std::string> parameters)
+{
+    if(parameters.size() != 1)
+    {
+        return false;
+    }
+
+    float upDown;
+    if (!parseFloat(upDown, parameters[0])) {
+        return false;
+    }
+
+    control.setGimbalOutputs(upDown);
+    return true;
+}
+
 void loop()
 {
     unsigned long loopStart = millis();
@@ -118,7 +160,20 @@ void loop()
             if(!handleMotionControlPacket(lastPacket.parameters))
             {
                 DEBUG_SERIAL_PRINTLN("Failed to handle motion control packet");
-                // TODO
+            }
+        }
+        else if(lastPacket.type == "gripper_control")
+        {
+            if(!handleGripperControlPacket(lastPacket.parameters))
+            {
+                DEBUG_SERIAL_PRINTLN("Failed to handle gripper control packet");
+            }
+        }
+        else if(lastPacket.type == "gimbal_control")
+        {
+            if(!handleGimbalControlPacket(lastPacket.parameters))
+            {
+                DEBUG_SERIAL_PRINTLN("Failed to handle gimbal control packet");
             }
         }
         else

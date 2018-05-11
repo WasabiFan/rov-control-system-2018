@@ -14,8 +14,7 @@ void Control::updateThrusterOutputs(Eigen::Vector6f thrusterOutputs)
 
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
-        int pwmValue = map(thrusterOutputs[i], -1, 1, THRUSTER_MIN_DUTY_CYCLE, THRUSTER_MAX_DUTY_CYCLE);
-        analogWrite(this->design.thrusters[i].pwmPin, pwmValue);
+        writeMotorController29(this->design.thrusters[i].pwmPin, thrusterOutputs[i]);
     }
 }
 
@@ -26,6 +25,13 @@ void Control::stopAllOutputs()
         analogWrite(this->design.thrusters[i].pwmPin, 0);
     }
 }
+
+void Control::writeMotorController29(uint8_t pin, float output)
+{
+    int pwmValue = map(output, -1, 1, THRUSTER_MIN_DUTY_CYCLE, THRUSTER_MAX_DUTY_CYCLE);
+    analogWrite(pin, pwmValue);
+}
+
 
 void Control::init(DesignInfo& design)
 {
@@ -44,6 +50,14 @@ void Control::init(DesignInfo& design)
         analogWriteFrequency(this->design.thrusters[i].pwmPin, THRUSTER_BASE_FREQUENCY);
         pinMode(this->design.thrusters[i].pwmPin, OUTPUT);
     }
+
+    analogWriteFrequency(this->design.gripperOpenClosePin, THRUSTER_BASE_FREQUENCY);
+    pinMode(this->design.gripperOpenClosePin, OUTPUT);
+    
+    analogWriteFrequency(this->design.gripperUpDownPin, THRUSTER_BASE_FREQUENCY);
+    pinMode(this->design.gripperUpDownPin, OUTPUT);
+
+    pinMode(this->design.gimbalPin, OUTPUT);
 
     this->stopAllOutputs();
 }
@@ -66,6 +80,19 @@ void Control::updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct)
 
     this->telemetryInfo.lastOutputs = thrusterOutputs;
     this->updateThrusterOutputs(thrusterOutputs);
+}
+
+void Control::setGripperOutputs(float upDown, float openClose)
+{
+    writeMotorController29(this->design.gripperUpDownPin, upDown);
+    writeMotorController29(this->design.gripperOpenClosePin, openClose);
+}
+
+void Control::setGimbalOutputs(float upDown)
+{
+    double scaledUpDown = map(upDown, 0, 1, this->design.minGimbalPosition, this->design.maxGimbalPosition);
+    int val = (int)map(scaledUpDown, 0, 1, 0, PWM_RANGE_MAX);
+    analogWrite(this->design.gimbalPin, val);
 }
 
 void Control::disable()

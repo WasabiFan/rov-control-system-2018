@@ -39,6 +39,14 @@ struct DesignInfo
 {
   std::array<Thruster, NUM_THRUSTERS> thrusters;
   Eigen::Vector3f centerOfMass;
+
+  uint8_t gripperUpDownPin;
+  uint8_t gripperOpenClosePin;
+  
+  uint8_t gimbalPin;
+
+  double minGimbalPosition;
+  double maxGimbalPosition;
 };
 
 class Control
@@ -54,9 +62,13 @@ private:
   void updateThrusterOutputs(Eigen::Vector6f thrusterOutputs);
   void stopAllOutputs();
 
+  void writeMotorController29(uint8_t pin, float output);
+
 public:
   void init(DesignInfo& design);
   void updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct);
+  void setGripperOutputs(float upDown, float openClose);
+  void setGimbalOutputs(float upDown);
   void disable();
 
   bool isEnabled();

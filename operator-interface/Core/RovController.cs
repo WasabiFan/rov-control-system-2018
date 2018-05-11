@@ -20,6 +20,11 @@ namespace RovOperatorInterface.Core
 
         public event EventHandler<RawStringReceivedEventArgs> TelemetryDataReceived;
 
+        private const int NumGimbalPositions = 10;
+        private int CurrentGimbalPosition = NumGimbalPositions / 2;
+
+        private GamepadReading? LastGamepadReading = null;
+
         public RovController()
         {
             Connector = new RovConnector();
@@ -68,6 +73,22 @@ namespace RovOperatorInterface.Core
             }
         }
 
+        private static float ButtonsToAnalog(GamepadReading? reading, GamepadButtons positive, GamepadButtons negative, float magnitude = 1)
+        {
+            float output = 0;
+            if (reading?.Buttons.HasFlag(positive) ?? false)
+            {
+                output += magnitude;
+            }
+
+            if (reading?.Buttons.HasFlag(negative) ?? false)
+            {
+                output -= magnitude;
+            }
+
+            return output;
+        }
+
         public async Task UpdateControlInput(GamepadReading? reading)
         {
             if (Connector.IsConnected)
@@ -82,6 +103,24 @@ namespace RovOperatorInterface.Core
                     reading?.RightThumbstickX
                 };
                 await Connector.Send(new SerialMessage("motion_control", RigidForceCommands.Select(f => (f ?? 0).ToString()).ToArray()));
+
+                await Connector.Send(new SerialMessage("gripper_control",
+                    ButtonsToAnalog(reading, GamepadButtons.DPadUp, GamepadButtons.DPadDown).ToString(),
+                    ButtonsToAnalog(reading, GamepadButtons.RightShoulder, GamepadButtons.LeftShoulder).ToString()));
+                
+                if (reading?.Buttons.HasFlag(GamepadButtons.A) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.A) == false)
+                {
+                    CurrentGimbalPosition++;
+                }
+                else if(reading?.Buttons.HasFlag(GamepadButtons.B) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.B) == false)
+                {
+                    CurrentGimbalPosition--;
+                }
+                CurrentGimbalPosition = Math.Max(Math.Min(CurrentGimbalPosition, NumGimbalPositions), 0);
+                double outputVal = CurrentGimbalPosition / NumGimbalPositions;
+                await Connector.Send(new SerialMessage("gimbal_control", outputVal.ToString()));
+                
+                LastGamepadReading = reading;
             }
         }
     }
