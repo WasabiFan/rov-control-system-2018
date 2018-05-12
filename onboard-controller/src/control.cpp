@@ -32,7 +32,6 @@ void Control::writeMotorController29(uint8_t pin, float output)
     analogWrite(pin, pwmValue);
 }
 
-
 void Control::init(DesignInfo& design)
 {
     this->design = design;
@@ -64,8 +63,27 @@ void Control::init(DesignInfo& design)
 
 void Control::updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct)
 {
+    Eigen::Vector3f requestedPlanarForce = { newForcesPct[0], newForcesPct[1], 0 };
+    Eigen::Vector6f linearThrusterOutputs;
+    linearThrusterOutputs <<
+        requestedPlanarForce.dot(this->design.thrusters[0].orientation),
+        requestedPlanarForce.dot(this->design.thrusters[1].orientation),
+        requestedPlanarForce.dot(this->design.thrusters[2].orientation),
+        requestedPlanarForce.dot(this->design.thrusters[3].orientation),
+        newForcesPct[2],
+        -newForcesPct[2];
+    Eigen::Vector6f rotationalThrusterOutputs;
+    for (int i = 0; i < 4; i++) {
+        auto comRelativePosition = this->design.thrusters[i].position - this->design.centerOfMass;
+        auto cross = comRelativePosition.cross(this->design.thrusters[i].orientation.normalized() * newForcesPct[5]);
+        rotationalThrusterOutputs[i] = (newForcesPct[5] > 0 ? 1 : -1 ) * ( cross.norm() / comRelativePosition.norm());
+    }
+    rotationalThrusterOutputs[4] = 0;
+    rotationalThrusterOutputs[5] = 0;
+
+
     // TODO: Can result of "fullPivLu" call be cached?
-    Eigen::Vector6f thrusterOutputs = this->intrinsics.fullPivLu().solve(newForcesPct);
+    Eigen::Vector6f thrusterOutputs = linearThrusterOutputs + rotationalThrusterOutputs; // = this->intrinsics.fullPivLu().solve(newForcesPct);
 
     float absMax = std::max(thrusterOutputs.maxCoeff(), std::fabs(thrusterOutputs.minCoeff()));
     if(absMax > 1) {
@@ -92,7 +110,7 @@ void Control::setGimbalOutputs(float upDown)
 {
     double scaledUpDown = map(upDown, 0, 1, this->design.minGimbalPosition, this->design.maxGimbalPosition);
     int val = (int)map(scaledUpDown, 0, 1, 0, PWM_RANGE_MAX);
-    analogWrite(this->design.gimbalPin, val);
+    //analogWrite(this->design.gimbalPin, val);
 }
 
 void Control::disable()

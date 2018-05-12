@@ -95,8 +95,8 @@ namespace RovOperatorInterface.Core
             {
                 double?[] RigidForceCommands =
                 {
-                    reading?.LeftThumbstickY,
-                    reading?.LeftThumbstickX,
+                    -reading?.LeftThumbstickY,
+                    -reading?.LeftThumbstickX,
                     reading?.RightTrigger - reading?.LeftTrigger,
                     0,
                     reading?.RightThumbstickY,
@@ -105,7 +105,7 @@ namespace RovOperatorInterface.Core
                 await Connector.Send(new SerialMessage("motion_control", RigidForceCommands.Select(f => (f ?? 0).ToString()).ToArray()));
 
                 await Connector.Send(new SerialMessage("gripper_control",
-                    ButtonsToAnalog(reading, GamepadButtons.DPadUp, GamepadButtons.DPadDown).ToString(),
+                    ButtonsToAnalog(reading, GamepadButtons.DPadUp, GamepadButtons.DPadDown, 0.4f).ToString(),
                     ButtonsToAnalog(reading, GamepadButtons.RightShoulder, GamepadButtons.LeftShoulder).ToString()));
                 
                 if (reading?.Buttons.HasFlag(GamepadButtons.A) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.A) == false)
@@ -117,7 +117,7 @@ namespace RovOperatorInterface.Core
                     CurrentGimbalPosition--;
                 }
                 CurrentGimbalPosition = Math.Max(Math.Min(CurrentGimbalPosition, NumGimbalPositions), 0);
-                double outputVal = CurrentGimbalPosition / NumGimbalPositions;
+                double outputVal = CurrentGimbalPosition / (double)NumGimbalPositions;
                 await Connector.Send(new SerialMessage("gimbal_control", outputVal.ToString()));
                 
                 LastGamepadReading = reading;
