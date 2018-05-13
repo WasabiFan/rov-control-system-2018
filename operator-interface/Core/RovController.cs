@@ -105,16 +105,16 @@ namespace RovOperatorInterface.Core
                 await Connector.Send(new SerialMessage("motion_control", RigidForceCommands.Select(f => (f ?? 0).ToString()).ToArray()));
 
                 await Connector.Send(new SerialMessage("gripper_control",
-                    ButtonsToAnalog(reading, GamepadButtons.DPadUp, GamepadButtons.DPadDown, 0.4f).ToString(),
+                    ButtonsToAnalog(reading, GamepadButtons.DPadDown, GamepadButtons.DPadUp, 0.4f).ToString(),
                     ButtonsToAnalog(reading, GamepadButtons.RightShoulder, GamepadButtons.LeftShoulder).ToString()));
                 
                 if (reading?.Buttons.HasFlag(GamepadButtons.A) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.A) == false)
                 {
-                    CurrentGimbalPosition++;
+                    CurrentGimbalPosition--;
                 }
                 else if(reading?.Buttons.HasFlag(GamepadButtons.B) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.B) == false)
                 {
-                    CurrentGimbalPosition--;
+                    CurrentGimbalPosition++;
                 }
                 CurrentGimbalPosition = Math.Max(Math.Min(CurrentGimbalPosition, NumGimbalPositions), 0);
                 double outputVal = CurrentGimbalPosition / (double)NumGimbalPositions;

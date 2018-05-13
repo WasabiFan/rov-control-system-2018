@@ -40,7 +40,7 @@ void setup()
     design.gripperOpenClosePin = 23;
     design.gimbalPin = 2;
 
-    design.minGimbalPosition = 0.3;
+    design.minGimbalPosition = 0.0;
     design.maxGimbalPosition = 0.7;
 
     control.init(design);
@@ -142,7 +142,7 @@ bool handleGimbalControlPacket(std::vector<std::string> parameters)
     if (!parseFloat(upDown, parameters[0])) {
         return false;
     }
-    
+
     control.setGimbalOutputs(upDown);
     return true;
 }
