@@ -1,5 +1,6 @@
 #include "Arduino.h"
 
+#include "auxiliary_control.h"
 #include "common.h"
 #include "comms.h"
 #include "control.h"
