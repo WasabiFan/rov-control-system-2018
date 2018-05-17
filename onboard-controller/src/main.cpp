@@ -13,6 +13,7 @@
 
 Comms comms;
 Control control;
+AuxiliaryControl auxControl;
 
 void setup()
 {
@@ -46,6 +47,8 @@ void setup()
 
     control.init(design);
     Serial.println(control.getIntrinsicsDebugInfo().c_str());
+
+    auxControl.init();
 
     /*
     // Throwaway variable to consume result and prevent the operation from being optimized away
@@ -92,6 +95,17 @@ void sendTelemetry()
     stream << controlTelemetry.lastOutputs.format(fmt);
     telemetryPacket.parameters.push_back(stream.str());
     comms.sendPacketToSerial(&telemetryPacket);
+}
+
+void sendOrientation()
+{
+    auto orientation = auxControl.getOrientation();
+    SerialPacket orientationPacket("orientation");
+    orientationPacket.parameters.push_back(to_string(orientationRadians.x));
+    orientationPacket.parameters.push_back(to_string(orientationRadians.y));
+    orientationPacket.parameters.push_back(to_string(orientationRadians.z));
+
+    comms.sendPacketToSerial(&orientationPacket);
 }
 
 bool handleMotionControlPacket(std::vector<std::string> parameters)
@@ -183,13 +197,15 @@ void loop()
         }
     }
 
-    if(comms.getTimeSinceLastReceive() > DISABLE_TIMEOUT)
+    if(control.isEnabled() && comms.getTimeSinceLastReceive() > DISABLE_TIMEOUT)
     {
         control.disable();
         // TODO: log?
     }
 
     sendTelemetry();
+    sendOrientation();
+
     unsigned long loopDuration = millis() - loopStart;
     uint32_t targetLoopDuration = (uint32_t)(1000/float(LOOP_FREQUENCY));
     int32_t timeRemaining = targetLoopDuration - loopDuration;

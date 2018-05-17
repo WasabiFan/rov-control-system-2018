@@ -10,5 +10,6 @@ private:
 
 public:
   AuxiliaryControls() : imu(55) {}
-  void initialize();
+  void init();
+  imu::vector<3> getOrientation();
 };
