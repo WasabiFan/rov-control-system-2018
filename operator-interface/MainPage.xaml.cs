@@ -56,6 +56,24 @@ namespace RovOperatorInterface
                 await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => ViewModel.TelemetryData = e.Text);
             };
 
+            Controller.OrientationDataReceived += async (sender, e) =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    ViewModel.VehicleRoll = e.Roll;
+                    ViewModel.VehiclePitch = e.Pitch;
+                    ViewModel.VehicleYaw = e.Yaw;
+                });
+            };
+
+            Controller.LogMessageReceived += async (sender, e) =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    ViewModel.LogMessages.Add($"[{e.Type}] {e.Message}");
+                });
+            };
+
             InputTimer = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(30) };
             InputTimer.Tick += InputTimer_Tick;
             InputTimer.Start();
@@ -136,6 +154,7 @@ namespace RovOperatorInterface
         {
             await StartPreviewAsync(WebcamSelector.SelectedWebcam);
             Controller.Initialize();
+
         }
 
         private async void WebcamSelector_WebcamSelectionChanged(object sender, WebcamSelectedEventArgs e)

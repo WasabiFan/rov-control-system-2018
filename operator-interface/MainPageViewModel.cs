@@ -23,6 +23,7 @@ namespace RovOperatorInterface
 
         private double _VehiclePitch { get; set; }
         private double _VehicleRoll { get; set; }
+        private double _VehicleYaw { get; set; }
 
         private bool _IsImuEnabled { get; set; }
 
@@ -75,6 +76,19 @@ namespace RovOperatorInterface
                 {
                     _VehiclePitch = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(VehiclePitch)));
+                }
+            }
+        }
+
+        public double VehicleYaw
+        {
+            get { return _VehicleYaw; }
+            set
+            {
+                if (value != _VehicleYaw)
+                {
+                    _VehicleYaw = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(VehicleYaw)));
                 }
             }
         }

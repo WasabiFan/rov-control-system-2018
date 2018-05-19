@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Eigen.h>
 #include <Dense>
 #include "Arduino.h"

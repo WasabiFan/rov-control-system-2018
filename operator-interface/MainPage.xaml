@@ -7,6 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:RovOperatorInterface.Controls"
     Loaded="Page_Loaded"
+    x:Name="WindowContainer"
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -47,7 +48,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <CaptureElement Name="PreviewControl" Stretch="Uniform" Margin="-10,0,10,0" Grid.ColumnSpan="2" Grid.RowSpan="2"/>
-                <controls:ArtificialHorizon Grid.Column="1" Grid.Row="1" x:Name="FirstPersonArtificialHorizon" DataContext="{Binding ElementName=WindowContainer, Path=DataContext}" />
+                <controls:ArtificialHorizon Grid.Column="1" Grid.Row="1" x:Name="FirstPersonArtificialHorizon" Pitch="{Binding VehiclePitch}" Roll="{Binding Path=VehicleRoll}" DataContext="{Binding ElementName=WindowContainer, Path=DataContext}" />
             </Grid>
         </SplitView>
     </Grid>
