@@ -11,7 +11,6 @@
 
 #define LOOP_FREQUENCY (100)
 
-Comms comms;
 Control control;
 AuxiliaryControl auxControl;
 
@@ -21,7 +20,7 @@ void setup()
     pinMode(13, OUTPUT);
     digitalWrite(13, HIGH);
 
-    comms.initialize();
+    Comms::getInstance().initialize();
     DEBUG_SERIAL_BEGIN();
 
     // TODO: Remove blocking loop
@@ -35,8 +34,8 @@ void setup()
         { 7, Eigen::Vector3f(1, -1, 0), Eigen::Vector3f(1, 1, 0) }, // Front left
         { 8, Eigen::Vector3f(-1, -1, 0), Eigen::Vector3f(-1, 1, 0) }, // Rear left
         { 10, Eigen::Vector3f(-1, 1, 0), Eigen::Vector3f(1, 1, 0) }, // Rear right
-        { 9, Eigen::Vector3f(0, 1, 0), Eigen::Vector3f(0, 0, -1) }, // Bottom front
-        { 30, Eigen::Vector3f(0, -1, 0), Eigen::Vector3f(0, 0, 1) } // Bottom rear
+        { 9, Eigen::Vector3f(0, 1, 0), Eigen::Vector3f(0, 0, -1) }, //Mid right
+        { 30, Eigen::Vector3f(0, -1, 0), Eigen::Vector3f(0, 0, 1) } // Mid left
     }};
     design.gripperUpDownPin = 22;
     design.gripperOpenClosePin = 23;
@@ -49,21 +48,6 @@ void setup()
     Serial.println(control.getIntrinsicsDebugInfo().c_str());
 
     auxControl.init();
-
-    /*
-    // Throwaway variable to consume result and prevent the operation from being optimized away
-    double x = 0;
-
-    uint32_t start = millis();
-    for(int i = 0; i < 10000; i++) {
-        Vector6f goals = Vector6f::Random();
-        Vector6f result = intrinsics.fullPivLu().solve(goals);
-        x += result.sum();
-    }
-    Serial.println("Done");
-    uint32_t duration = millis() - start;
-    Serial.println(x);
-    Serial.println(duration);*/
 }
 
 std::string to_string(float n)
@@ -94,7 +78,7 @@ void sendTelemetry()
     std::ostringstream stream;
     stream << controlTelemetry.lastOutputs.format(fmt);
     telemetryPacket.parameters.push_back(stream.str());
-    comms.sendPacketToSerial(&telemetryPacket);
+    Comms::getInstance().sendPacketToSerial(&telemetryPacket);
 }
 
 void sendOrientation()
@@ -105,7 +89,7 @@ void sendOrientation()
     orientationPacket.parameters.push_back(to_string(orientation.y()));
     orientationPacket.parameters.push_back(to_string(orientation.z()));
 
-    comms.sendPacketToSerial(&orientationPacket);
+    Comms::getInstance().sendPacketToSerial(&orientationPacket);
 }
 
 bool handleMotionControlPacket(std::vector<std::string> parameters)
@@ -167,7 +151,7 @@ void loop()
     unsigned long loopStart = millis();
     
     SerialPacket lastPacket;
-    while(comms.readPacketFromSerial(&lastPacket))
+    while(Comms::getInstance().readPacketFromSerial(&lastPacket))
     {
         // TODO: Prevent blocking loop for too long
         if(lastPacket.type == "motion_control")
@@ -197,7 +181,9 @@ void loop()
         }
     }
 
-    if(control.isEnabled() && comms.getTimeSinceLastReceive() > DISABLE_TIMEOUT)
+    Comms::getInstance().update();
+
+    if(control.isEnabled() && Comms::getInstance().getTimeSinceLastReceive() > DISABLE_TIMEOUT)
     {
         control.disable();
         // TODO: log?

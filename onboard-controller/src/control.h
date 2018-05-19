@@ -1,3 +1,5 @@
+#pragma once
+
 #include "common.h"
 
 #define NUM_THRUSTERS 6
