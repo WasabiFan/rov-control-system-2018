@@ -130,11 +130,27 @@ namespace RovOperatorInterface.Communication
                                 Debug.WriteLine(Environment.TickCount + " " + line);
                                 if (SerialMessage.TryParse(line, out SerialMessage message))
                                 {
-                                    OnMessageReceived(message);
+                                    try
+                                    {
+                                        OnMessageReceived(message);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Debug.WriteLine(e.ToString());
+                                        Debugger.Break();
+                                    }
                                 }
                                 else
                                 {
-                                    OnRawStringReceived(line);
+                                    try
+                                    {
+                                        OnRawStringReceived(line);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Debug.WriteLine(e.ToString());
+                                        Debugger.Break();
+                                    }
                                 }
                                 builder.Clear();
                             }

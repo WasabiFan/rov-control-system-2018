@@ -9,9 +9,17 @@ using Windows.Gaming.Input;
 
 namespace RovOperatorInterface.Core
 {
-    public class TelemetryDataReceivedEventArgs : EventArgs
+    public class OrientationEventArgs : EventArgs
     {
-        public string Text { get; set; }
+        public double Roll { get; set; }
+        public double Pitch { get; set; }
+        public double Yaw { get; set; }
+    }
+
+    public class LogMessageEventArgs : EventArgs
+    {
+        public string Type { get; set; }
+        public string Message { get; set; }
     }
 
     class RovController
@@ -19,6 +27,8 @@ namespace RovOperatorInterface.Core
         private RovConnector Connector;
 
         public event EventHandler<RawStringReceivedEventArgs> TelemetryDataReceived;
+        public event EventHandler<LogMessageEventArgs> LogMessageReceived;
+        public event EventHandler<OrientationEventArgs> OrientationDataReceived;
 
         private const int NumGimbalPositions = 10;
         private int CurrentGimbalPosition = NumGimbalPositions / 2;
@@ -39,26 +49,68 @@ namespace RovOperatorInterface.Core
 
         private void Connector_RawStringReceived(object sender, RawStringReceivedEventArgs e)
         {
+            LogMessageReceived?.Invoke(this, new LogMessageEventArgs()
+            {
+                Type = "info",
+                Message = e.Text
+            });
             Debug.WriteLine(e.Text);
         }
 
         private void HandleTelemetryMessage(SerialMessage message)
         {
-            if (message.Parameters.Length != 3)
+            if (message.Parameters.Length != 5)
             {
-                throw new SerialMessageMalformedException($"Telemetry message has the incorrect number of params; expected 3, was {message.Parameters.Length}", message);
+                throw new SerialMessageMalformedException($"Telemetry message has the incorrect number of params; expected 5, was {message.Parameters.Length}", message);
             }
-            
+
             bool.TryParse(message.Parameters[0], out bool IsScalingAtLimit);
             float.TryParse(message.Parameters[1], out float LimitScaleFactor);
             string ThrusterOutputs = message.Parameters[2].Replace(",", ", ");
+            string ImuCalibStates = message.Parameters[3].Replace(",", ", ");
+            int.TryParse(message.Parameters[4], out int OverallImuCalibState);
 
             string data = $"Telemetry: {Environment.NewLine}"
                 + $"\t{nameof(IsScalingAtLimit)}: {IsScalingAtLimit}{Environment.NewLine}"
                 + $"\t{nameof(LimitScaleFactor)}: {LimitScaleFactor}{Environment.NewLine}"
-                + $"\t{nameof(ThrusterOutputs)}: {ThrusterOutputs}";
+                + $"\t{nameof(ThrusterOutputs)}: {ThrusterOutputs}{Environment.NewLine}"
+                + $"\t{nameof(ImuCalibStates)}: {ImuCalibStates}{Environment.NewLine}"
+                + $"\t{nameof(OverallImuCalibState)}: {OverallImuCalibState}";
 
             TelemetryDataReceived?.Invoke(this, new RawStringReceivedEventArgs() { Text = data });
+        }
+
+        private void HandleLogMessage(SerialMessage message)
+        {
+            if (message.Parameters.Length < 1)
+            {
+                throw new SerialMessageMalformedException($"Log message has the incorrect number of params; expected at least 1, was {message.Parameters.Length}", message);
+            }
+
+            LogMessageReceived?.Invoke(this, new LogMessageEventArgs()
+            {
+                Type = message.Parameters[0],
+                Message = string.Join(' ', message.Parameters.Skip(1).ToArray())
+            });
+        }
+
+        private void HandleOrientationMessage(SerialMessage message)
+        {
+            if (message.Parameters.Length != 3)
+            {
+                throw new SerialMessageMalformedException($"Orientation message has the incorrect number of params; expected 3, was {message.Parameters.Length}", message);
+            }
+
+            double.TryParse(message.Parameters[0], out double Yaw);
+            double.TryParse(message.Parameters[1], out double Roll);
+            double.TryParse(message.Parameters[2], out double Pitch);
+
+            OrientationDataReceived?.Invoke(this, new OrientationEventArgs()
+            {
+                Roll = Roll,
+                Pitch = Pitch,
+                Yaw = Yaw
+            });
         }
 
         private void Connector_MessageReceived(object sender, MessageReceivedEventArgs e)
@@ -66,6 +118,14 @@ namespace RovOperatorInterface.Core
             if (e.Message.Type == "telemetry")
             {
                 HandleTelemetryMessage(e.Message);
+            }
+            else if (e.Message.Type == "log")
+            {
+                HandleLogMessage(e.Message);
+            }
+            else if (e.Message.Type == "orientation")
+            {
+                HandleOrientationMessage(e.Message);
             }
             else
             {

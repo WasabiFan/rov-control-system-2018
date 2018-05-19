@@ -6,6 +6,7 @@
 #include "control.h"
 
 #include <string>
+#include <cmath>
 
 #define DISABLE_TIMEOUT (5000)
 
@@ -93,9 +94,9 @@ void sendOrientation()
 {
     auto orientation = auxControl.getOrientation();
     SerialPacket orientationPacket("orientation");
-    orientationPacket.parameters.push_back(to_string(orientation.x()));
-    orientationPacket.parameters.push_back(to_string(orientation.y()));
-    orientationPacket.parameters.push_back(to_string(orientation.z()));
+    orientationPacket.parameters.push_back(to_string(orientation.x() * (180 / M_PI)));
+    orientationPacket.parameters.push_back(to_string(orientation.y() * (-180 / M_PI)));
+    orientationPacket.parameters.push_back(to_string(orientation.z() * (180 / M_PI)));
 
     Comms::getInstance().sendPacketToSerial(&orientationPacket);
 }
