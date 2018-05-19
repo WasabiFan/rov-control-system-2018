@@ -1,6 +1,6 @@
 #include <Audio.h>
-//#include <Wire.h>
-//#include <SPI.h>
+
+//#define DUMP_MODE
 
 AudioInputAnalog audioIn(A2);
 
@@ -11,14 +11,22 @@ AudioConnection patchCord1(audioIn, fft);
 #define TONE_TIME_THRESH 1000
 #define RESET_TIME_THRESH 500
 
-int detectionStage = 0;
-const int frequencyBuckets[] PROGMEM = {19, 23};
+uint8_t detectionStage = 0;
+const int frequencyBuckets[] = {19, 22};
 uint32_t lastStageEndTime = NO_TIME;
 uint32_t detectionStartTime = NO_TIME;
 
 void setup()
 {
     Serial.begin(115200);
+    AudioMemory(12);
+}
+
+void beginLogMessage()
+{
+    Serial.print("[");
+    Serial.print(millis());
+    Serial.print("] ");
 }
 
 void activateTrigger()
@@ -26,26 +34,36 @@ void activateTrigger()
     Serial.println("TRIGGER");
 }
 
-void loop()
+bool checkIsFreqActive(int bucketNumber)
 {
-    //adc1.update();
-    //print1.update();
-    //val = analogRead(A2);
-    //Serial.println(val);
-    //delay(5);
+    return fft.read(bucketNumber) > 0.04;
+}
 
+void updateTriggerCheck()
+{
     if (fft.available())
     {
         uint32_t time = millis();
-        bool isFreqActive = fft.read(frequencyBuckets[detectionStage]) > 0.05;
-        if (isFreqActive)
+        bool isFreqActive = checkIsFreqActive(frequencyBuckets[detectionStage]);
+        bool isLastFreqActive = detectionStage > 0 && checkIsFreqActive(frequencyBuckets[detectionStage - 1]);
+
+        if (isFreqActive && isLastFreqActive)
+        {
+            beginLogMessage();
+            Serial.println("Warn: Active frequency rejected because of simultaneous past stage frequency");
+        }
+
+        if (isFreqActive && !isLastFreqActive)
         {
             if (detectionStartTime == NO_TIME)
             {
+                beginLogMessage();
+                Serial.println("Initial active edge detected");
                 detectionStartTime = time;
             }
             else if (time - detectionStartTime > TONE_TIME_THRESH)
             {
+                beginLogMessage();
                 Serial.print("Accepted stage ");
                 Serial.print(detectionStage);
                 Serial.println("; advancing");
@@ -67,6 +85,7 @@ void loop()
             detectionStartTime = NO_TIME;
             if (lastStageEndTime != NO_TIME && time - lastStageEndTime > RESET_TIME_THRESH)
             {
+                beginLogMessage();
                 Serial.print("Timed out waiting for stage ");
                 Serial.println(detectionStage);
                 lastStageEndTime = NO_TIME;
@@ -74,7 +93,10 @@ void loop()
             }
         }
     }
-/*
+}
+
+void printSpectrum()
+{
     float n;
     int i;
     if (fft.available())
@@ -92,9 +114,33 @@ void loop()
             }
             else
             {
-                Serial.print("   "); // don't print "0.00"
+                Serial.print("     "); // don't print "0.00"
             }
         }
         Serial.println();
-    }*/
+
+        Serial.print("     ");
+        for (i = 0; i < 40; i++)
+        {
+            Serial.print(i);
+            if (i < 10)
+            {
+                Serial.print("    ");
+            }
+            else
+            {
+                Serial.print("   ");
+            }
+        }
+        Serial.println();
+    }
+}
+
+void loop()
+{
+#ifdef DUMP_MODE
+    printSpectrum();
+#else
+    updateTriggerCheck();
+#endif
 }
