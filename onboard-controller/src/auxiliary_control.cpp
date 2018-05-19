@@ -1,6 +1,6 @@
 #include "auxiliary_control.h"
 
-void AuxiliaryControls::init()
+void AuxiliaryControl::init()
 {
     isImuInitialized = this->imu.begin();
     if (!isImuInitialized)
@@ -12,11 +12,11 @@ void AuxiliaryControls::init()
 
 }
 
-imu::vector<3> AuxiliaryControls::getOrientation()
+imu::Vector<3> AuxiliaryControl::getOrientation()
 {
     if (!isImuInitialized)
     {
-        return imu::vector<3>();
+        return imu::Vector<3>();
     }
     return imu.getQuat().toEuler();
 }

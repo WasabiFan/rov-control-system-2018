@@ -101,9 +101,9 @@ void sendOrientation()
 {
     auto orientation = auxControl.getOrientation();
     SerialPacket orientationPacket("orientation");
-    orientationPacket.parameters.push_back(to_string(orientationRadians.x));
-    orientationPacket.parameters.push_back(to_string(orientationRadians.y));
-    orientationPacket.parameters.push_back(to_string(orientationRadians.z));
+    orientationPacket.parameters.push_back(to_string(orientation.x()));
+    orientationPacket.parameters.push_back(to_string(orientation.y()));
+    orientationPacket.parameters.push_back(to_string(orientation.z()));
 
     comms.sendPacketToSerial(&orientationPacket);
 }

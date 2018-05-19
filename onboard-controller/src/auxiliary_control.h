@@ -2,14 +2,14 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 
-class AuxiliaryControls
+class AuxiliaryControl
 {
 private:
   Adafruit_BNO055 imu;
   bool isImuInitialized = false;
 
 public:
-  AuxiliaryControls() : imu(55) {}
+  AuxiliaryControl() : imu(55) {}
   void init();
-  imu::vector<3> getOrientation();
+  imu::Vector<3> getOrientation();
 };
