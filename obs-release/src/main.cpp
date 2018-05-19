@@ -101,8 +101,6 @@ void printSpectrum()
     int i;
     if (fft.available())
     {
-        // each time new FFT data is available
-        // print it all to the Arduino Serial Monitor
         Serial.print("FFT: ");
         for (i = 0; i < 40; i++)
         {
@@ -114,7 +112,7 @@ void printSpectrum()
             }
             else
             {
-                Serial.print("     "); // don't print "0.00"
+                Serial.print("     ");
             }
         }
         Serial.println();
