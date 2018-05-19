@@ -1,5 +1,7 @@
 #include "comms.h"
 
+#include "common.h"
+
 #include <iostream>
 #include <sstream>
 #include <iterator>
@@ -82,6 +84,9 @@ void Comms::logError(std::string error)
     packet->type = "log";
     packet->parameters.push_back("error");
     packet->parameters.push_back(error);
+
+    DEBUG_SERIAL_PRINT("ERROR: ");
+    DEBUG_SERIAL_PRINTLN(error.c_str());
 
     sendOrQueueAsyncPacket(packet);
 }

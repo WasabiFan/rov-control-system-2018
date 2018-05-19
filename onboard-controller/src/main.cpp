@@ -75,9 +75,17 @@ void sendTelemetry()
     telemetryPacket.parameters.push_back(to_string(controlTelemetry.limitScaleFactor));
 
     const Eigen::IOFormat fmt(2, Eigen::DontAlignCols, "", ",", "", "", "", "");
-    std::ostringstream stream;
-    stream << controlTelemetry.lastOutputs.format(fmt);
-    telemetryPacket.parameters.push_back(stream.str());
+    std::ostringstream controlTelemetryStream;
+    controlTelemetryStream << controlTelemetry.lastOutputs.format(fmt);
+    telemetryPacket.parameters.push_back(controlTelemetryStream.str());
+
+    uint8_t system, gyro, accel, mag;
+    int internalState = auxControl.getCalibStatus(system, gyro, accel, mag);
+
+    std::ostringstream s;
+    s << int(system) << "," << int(gyro) << "," << int(accel) << "," << int(mag) << ", " << internalState;
+    telemetryPacket.parameters.push_back(s.str());
+
     Comms::getInstance().sendPacketToSerial(&telemetryPacket);
 }
 
@@ -182,6 +190,7 @@ void loop()
     }
 
     Comms::getInstance().update();
+    auxControl.update();
 
     if(control.isEnabled() && Comms::getInstance().getTimeSinceLastReceive() > DISABLE_TIMEOUT)
     {
