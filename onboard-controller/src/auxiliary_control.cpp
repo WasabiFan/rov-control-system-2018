@@ -2,6 +2,7 @@
 
 #include "common.h"
 
+#include "Arduino.h"
 #include <EEPROM.h>
 
 void AuxiliaryControl::init()
@@ -53,10 +54,22 @@ void AuxiliaryControl::tryLoadCalib()
 
 void AuxiliaryControl::update()
 {
-    uint32_t time = millis();
-    if (time - lastImuUpdate > IMU_UPDATE_INTERVAL_MS) {
-        lastImuUpdate = time;
+    if (timeSinceImuUpdate > IMU_UPDATE_INTERVAL_MS)
+    {
+        timeSinceImuUpdate = 0;
         updateImu();
+    }
+
+    if (currentBuzzerStage >= 0 && timeInBuzzerStage > BUZZER_TONE_LENGTH)
+    {
+        timeInBuzzerStage = 0;
+        currentBuzzerStage++;
+        if ((size_t)currentBuzzerStage >= sizeof(buzzerStageTones) / sizeof(uint16_t))
+        {
+            currentBuzzerStage = 0;
+        }
+
+        tone(BUZZER_PIN, buzzerStageTones[currentBuzzerStage]);
     }
 }
 
@@ -122,6 +135,28 @@ void AuxiliaryControl::debugPrintSensorOffsets(const adafruit_bno055_offsets_t &
     DEBUG_SERIAL_PRINTLN(calibData.mag_radius);
 }
 
+void AuxiliaryControl::setIsBuzzerPlaying(bool isPlaying)
+{
+    if (isPlaying)
+    {
+        if (currentBuzzerStage >= 0)
+        {
+            return;
+        }
+
+        currentBuzzerStage = 0;
+        tone(BUZZER_PIN, buzzerStageTones[currentBuzzerStage]);
+    }
+    else
+    {
+        if (currentBuzzerStage == NO_STAGE)
+        {
+            return;
+        }
+
+        noTone(BUZZER_PIN);
+    }
+}
 
 int AuxiliaryControl::getCalibStatus(uint8_t &system, uint8_t &gyro, uint8_t &accel, uint8_t &mag)
 {
