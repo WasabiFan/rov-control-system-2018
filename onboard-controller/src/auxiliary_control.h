@@ -14,13 +14,23 @@
 
 #define IMU_CALIB_DATA_EEPROM_BEGIN_ADDR (0)
 
+#define BUZZER_PIN (6)
+#define BUZZER_TONE_LENGTH (1250)
+
+#define NO_STAGE (-1)
+
+const uint16_t buzzerStageTones[] = { 800, 950 };
+
 class AuxiliaryControl
 {
 private:
   Adafruit_BNO055 imu;
   int imuState = 0;
 
-  uint32_t lastImuUpdate = 0;
+  elapsedMillis timeSinceImuUpdate = 0;
+
+  int currentBuzzerStage = -1;
+  elapsedMillis timeInBuzzerStage;
 
   void tryLoadCalib();
   void updateImu();
@@ -31,6 +41,8 @@ public:
   AuxiliaryControl() : imu(55) {}
   void init();
   void update();
+
+  void setIsBuzzerPlaying(bool isPlaying);
 
   int getCalibStatus(uint8_t &system, uint8_t &gyro, uint8_t &accel, uint8_t &mag);
   imu::Vector<3> getOrientation();
