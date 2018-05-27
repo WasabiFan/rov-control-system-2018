@@ -6,11 +6,11 @@
 
 void Control::updateThrusterOutputs(Eigen::Vector6f thrusterOutputs)
 {
-    /*if(!this->controlState.isEnabled)
+    if(!this->controlState.isEnabled)
     {
         this->stopAllOutputs();
         return;
-    }*/
+    }
 
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
@@ -24,17 +24,31 @@ void Control::stopAllOutputs()
     {
         analogWrite(this->design.thrusters[i].pwmPin, 0);
     }
+    analogWrite(this->design.gripperOpenClosePin, 0);
+    analogWrite(this->design.gripperUpDownPin, 0);
+    // Nothing to do for the gimbal pin; we don't have a way to properly disable
+    // the servo's motion, so leave it where it is.
 }
 
 void Control::writeMotorController29(uint8_t pin, float output)
 {
-    int pwmValue = map(output, -1, 1, THRUSTER_MIN_DUTY_CYCLE, THRUSTER_MAX_DUTY_CYCLE);
-    analogWrite(pin, pwmValue);
+    if (this->isEnabled())
+    {
+        int pwmValue = map(output, -1, 1, THRUSTER_MIN_DUTY_CYCLE, THRUSTER_MAX_DUTY_CYCLE);
+        analogWrite(pin, pwmValue);
+    }
+    else
+    {
+        analogWrite(pin, 0);
+    }
 }
 
 void Control::init(DesignInfo& design)
 {
     this->design = design;
+    
+    pinMode(STATUS_LED_PIN, OUTPUT);
+    digitalWrite(STATUS_LED_PIN, HIGH);
 
     for (int col = 0; col < NUM_THRUSTERS; col++) {
         this->intrinsics.block(0, col, 3, 1) = this->design.thrusters[col].orientation.normalized();
@@ -61,7 +75,20 @@ void Control::init(DesignInfo& design)
     this->stopAllOutputs();
 }
 
-void Control::updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct)
+void Control::update()
+{
+    if (this->isEnabled())
+    {
+        if (blinkTimerElapsed > ENABLED_BLINK_INTERVAL)
+        {
+            blinkTimerElapsed = 0;
+            this->blinkState = !this->blinkState;
+            digitalWrite(STATUS_LED_PIN, this->blinkState ? HIGH : LOW);
+        }
+    }
+}
+
+void Control::setRequestedRigidForcesPct(Eigen::Vector6f newForcesPct)
 {
     Eigen::Vector3f requestedPlanarForce = { newForcesPct[0], newForcesPct[1], 0 };
     Eigen::Vector6f linearThrusterOutputs;
@@ -113,10 +140,47 @@ void Control::setGimbalOutputs(float upDown)
     //analogWrite(this->design.gimbalPin, val);
 }
 
+void Control::enable()
+{
+    if (this->controlState.isEnabled)
+    {
+        return;
+    }
+
+    DEBUG_SERIAL_IPRINTLN("Enabling");
+    
+    blinkTimerElapsed = 0;
+    this->blinkState = false;
+    digitalWrite(STATUS_LED_PIN, LOW);
+
+    this->controlState.isEnabled = true;
+}
+
 void Control::disable()
 {
+    if (!this->controlState.isEnabled)
+    {
+        return;
+    }
+    DEBUG_SERIAL_IPRINTLN("Disabling");
+    
+    this->blinkState = true;
+    digitalWrite(STATUS_LED_PIN, HIGH);
+
     this->controlState.isEnabled = false;
     this->stopAllOutputs();
+}
+
+void Control::setIsEnabled(bool isEnabled)
+{
+    if (isEnabled)
+    {
+        enable();
+    }
+    else
+    {
+        disable();
+    }
 }
 
 bool Control::isEnabled()

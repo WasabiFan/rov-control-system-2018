@@ -1,4 +1,5 @@
-﻿using RovOperatorInterface.Controls;
+﻿using RovOperatorInterface.Communication;
+using RovOperatorInterface.Controls;
 using RovOperatorInterface.Core;
 using RovOperatorInterface.Utils;
 using System;
@@ -74,6 +75,14 @@ namespace RovOperatorInterface
                 });
             };
 
+            Controller.EnableStateReceived += async (sender, e) =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    ViewModel.IsRovEnabled = e.EnableState;
+                });
+            };
+
             InputTimer = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(30) };
             InputTimer.Tick += InputTimer_Tick;
             InputTimer.Start();
@@ -145,8 +154,21 @@ namespace RovOperatorInterface
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
             {
-                var Reading = GamepadSelector.SelectedGamepad?.GetCurrentReading();
-                await Controller.UpdateControlInput(Reading);
+                if (Controller.IsEnableTimeoutExpired)
+                {
+                    ViewModel.IsRovEnabled = false;
+                }
+
+                try
+                {
+                    var Reading = GamepadSelector.SelectedGamepad?.GetCurrentReading();
+                    await Controller.UpdateControlInput(Reading);
+                }
+                catch (RovNotConnectedException)
+                {
+                    // No-op
+                    // TODO: Rather than doing this, just start/stop timer?
+                }
             });
         }
 
@@ -154,7 +176,6 @@ namespace RovOperatorInterface
         {
             await StartPreviewAsync(WebcamSelector.SelectedWebcam);
             Controller.Initialize();
-
         }
 
         private async void WebcamSelector_WebcamSelectionChanged(object sender, WebcamSelectedEventArgs e)
@@ -172,12 +193,12 @@ namespace RovOperatorInterface
 
         private void EnableToggle_Checked(object sender, RoutedEventArgs e)
         {
-            // TODO
+            Controller.RequestEnableDisable(true);
         }
 
         private void EnableToggle_Unchecked(object sender, RoutedEventArgs e)
         {
-            // TODO
+            Controller.RequestEnableDisable(false);
         }
     }
 }

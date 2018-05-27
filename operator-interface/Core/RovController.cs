@@ -1,4 +1,5 @@
 ﻿using RovOperatorInterface.Communication;
+using RovOperatorInterface.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,6 +17,11 @@ namespace RovOperatorInterface.Core
         public double Yaw { get; set; }
     }
 
+    public class EnableStateEventArgs : EventArgs
+    {
+        public bool EnableState { get; set; }
+    }
+
     public class LogMessageEventArgs : EventArgs
     {
         public string Type { get; set; }
@@ -29,11 +35,14 @@ namespace RovOperatorInterface.Core
         public event EventHandler<RawStringReceivedEventArgs> TelemetryDataReceived;
         public event EventHandler<LogMessageEventArgs> LogMessageReceived;
         public event EventHandler<OrientationEventArgs> OrientationDataReceived;
+        public event EventHandler<EnableStateEventArgs> EnableStateReceived;
 
         private const int NumGimbalPositions = 10;
         private int CurrentGimbalPosition = NumGimbalPositions / 2;
 
         private GamepadReading? LastGamepadReading = null;
+        
+        TimeoutFlag EnableTimeout = new TimeoutFlag(TimeSpan.FromSeconds(1));
 
         public RovController()
         {
@@ -113,8 +122,23 @@ namespace RovOperatorInterface.Core
             });
         }
 
+        private void HandleEnableStateMessage(SerialMessage message)
+        {
+            if (message.Parameters.Length != 1)
+            {
+                throw new SerialMessageMalformedException($"Enable state message has the incorrect number of params; expected 1, was {message.Parameters.Length}", message);
+            }
+
+            bool.TryParse(message.Parameters[0], out bool IsEnabled);
+            EnableStateReceived?.Invoke(this, new EnableStateEventArgs()
+            {
+                EnableState = IsEnabled
+            });
+        }
+
         private void Connector_MessageReceived(object sender, MessageReceivedEventArgs e)
         {
+            EnableTimeout.RegisterUpdate();
             if (e.Message.Type == "telemetry")
             {
                 HandleTelemetryMessage(e.Message);
@@ -127,9 +151,28 @@ namespace RovOperatorInterface.Core
             {
                 HandleOrientationMessage(e.Message);
             }
+            else if (e.Message.Type == "enable_state")
+            {
+                HandleEnableStateMessage(e.Message);
+            }
             else
             {
                 Debug.WriteLine($"Unknown message type {e.Message.Type}");
+            }
+        }
+
+        public async void RequestEnableDisable(bool isEnabled)
+        {
+            if (Connector.IsConnected)
+            {
+                try
+                {
+                    await Connector.Send(new SerialMessage("request_enable_disable", isEnabled.ToString().ToLower()));
+                }
+                catch(RovSendOperationFailedException)
+                {
+                    // TODO: do we care?
+                }
             }
         }
 
@@ -153,35 +196,47 @@ namespace RovOperatorInterface.Core
         {
             if (Connector.IsConnected)
             {
-                double?[] RigidForceCommands =
+                try
                 {
-                    -reading?.LeftThumbstickY,
-                    -reading?.LeftThumbstickX,
-                    reading?.RightTrigger - reading?.LeftTrigger,
-                    0,
-                    reading?.RightThumbstickY,
-                    reading?.RightThumbstickX
-                };
-                await Connector.Send(new SerialMessage("motion_control", RigidForceCommands.Select(f => (f ?? 0).ToString()).ToArray()));
+                    double?[] RigidForceCommands =
+                    {
+                        -reading?.LeftThumbstickY,
+                        -reading?.LeftThumbstickX,
+                        reading?.RightTrigger - reading?.LeftTrigger,
+                        0,
+                        reading?.RightThumbstickY,
+                        reading?.RightThumbstickX
+                    };
+                    await Connector.Send(new SerialMessage("motion_control", RigidForceCommands.Select(f => (f ?? 0).ToString()).ToArray()));
 
-                await Connector.Send(new SerialMessage("gripper_control",
-                    ButtonsToAnalog(reading, GamepadButtons.DPadDown, GamepadButtons.DPadUp, 0.4f).ToString(),
-                    ButtonsToAnalog(reading, GamepadButtons.RightShoulder, GamepadButtons.LeftShoulder).ToString()));
-                
-                if (reading?.Buttons.HasFlag(GamepadButtons.A) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.A) == false)
-                {
-                    CurrentGimbalPosition--;
+                    await Connector.Send(new SerialMessage("gripper_control",
+                        ButtonsToAnalog(reading, GamepadButtons.DPadDown, GamepadButtons.DPadUp, 0.4f).ToString(),
+                        ButtonsToAnalog(reading, GamepadButtons.RightShoulder, GamepadButtons.LeftShoulder).ToString()));
+
+                    if (reading?.Buttons.HasFlag(GamepadButtons.A) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.A) == false)
+                    {
+                        CurrentGimbalPosition--;
+                    }
+                    else if (reading?.Buttons.HasFlag(GamepadButtons.B) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.B) == false)
+                    {
+                        CurrentGimbalPosition++;
+                    }
+                    CurrentGimbalPosition = Math.Max(Math.Min(CurrentGimbalPosition, NumGimbalPositions), 0);
+                    double outputVal = CurrentGimbalPosition / (double)NumGimbalPositions;
+                    await Connector.Send(new SerialMessage("gimbal_control", outputVal.ToString()));
+
+                    LastGamepadReading = reading;
                 }
-                else if(reading?.Buttons.HasFlag(GamepadButtons.B) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.B) == false)
+                catch (RovSendOperationFailedException)
                 {
-                    CurrentGimbalPosition++;
+                    // TODO: do we care?
                 }
-                CurrentGimbalPosition = Math.Max(Math.Min(CurrentGimbalPosition, NumGimbalPositions), 0);
-                double outputVal = CurrentGimbalPosition / (double)NumGimbalPositions;
-                await Connector.Send(new SerialMessage("gimbal_control", outputVal.ToString()));
-                
-                LastGamepadReading = reading;
-            }
+        }
+        }
+        
+        public bool IsEnableTimeoutExpired
+        {
+            get => EnableTimeout.IsTimedOut();
         }
     }
 }

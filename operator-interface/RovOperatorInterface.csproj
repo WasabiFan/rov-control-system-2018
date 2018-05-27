@@ -96,6 +96,8 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Communication\RovConnector.cs" />
+    <Compile Include="Communication\RovNotConnectedException.cs" />
+    <Compile Include="Communication\RovSendOperationFailedException.cs" />
     <Compile Include="Communication\SerialMessage.cs" />
     <Compile Include="Controls\ArtificialHorizon.xaml.cs">
       <DependentUpon>ArtificialHorizon.xaml</DependentUpon>

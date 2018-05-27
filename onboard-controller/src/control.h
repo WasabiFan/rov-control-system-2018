@@ -18,6 +18,9 @@
 #define THRUSTER_MIN_DUTY_CYCLE (THRUSTER_MIN_TIME_S*THRUSTER_BASE_FREQUENCY*PWM_RANGE_MAX)
 #define THRUSTER_MAX_DUTY_CYCLE (THRUSTER_MAX_TIME_S*THRUSTER_BASE_FREQUENCY*PWM_RANGE_MAX)
 
+#define STATUS_LED_PIN (13)
+#define ENABLED_BLINK_INTERVAL (250)
+
 struct ControlState
 {
   bool isEnabled = false;
@@ -58,8 +61,10 @@ private:
   TelemetryInfo telemetryInfo;
   DesignInfo design;
 
-  // TODO: don't use random intrinsics
   Eigen::Matrix<float, 6, 6> intrinsics;
+
+  elapsedMillis blinkTimerElapsed;
+  bool blinkState = false;
 
   void updateThrusterOutputs(Eigen::Vector6f thrusterOutputs);
   void stopAllOutputs();
@@ -68,10 +73,13 @@ private:
 
 public:
   void init(DesignInfo& design);
-  void updateRequestedRigidForcesPct(Eigen::Vector6f newForcesPct);
+  void update();
+  void setRequestedRigidForcesPct(Eigen::Vector6f newForcesPct);
   void setGripperOutputs(float upDown, float openClose);
   void setGimbalOutputs(float upDown);
+  void enable();
   void disable();
+  void setIsEnabled(bool isEnabled);
 
   bool isEnabled();
   TelemetryInfo getTelemetryInfo();

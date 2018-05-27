@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.SerialCommunication;
@@ -34,15 +35,30 @@ namespace RovOperatorInterface.Communication
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
         public event EventHandler<RawStringReceivedEventArgs> RawStringReceived;
 
-        public bool IsConnected => OpenConnection != null;
+        public bool IsConnected => OpenConnection != null && OpenConnection.IsOpen;
 
         public RovConnector()
         {
-
             DeviceSelector = SerialDevice.GetDeviceSelectorFromUsbVidPid(UsbVendorId, UsbProductId);
             Watcher = DeviceInformation.CreateWatcher(DeviceSelector);
 
             Watcher.Added += Watcher_Added;
+            Watcher.Removed += Watcher_Removed;
+            Watcher.Updated += Watcher_Updated;
+        }
+
+        private void Watcher_Updated(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            throw new NotImplementedException();
+        }
+
+        private async void Watcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            if (args.Id != null && OpenConnection?.ConnectedDeviceId == args.Id)
+            {
+                await OpenConnection.Close();
+                OpenConnection = null;
+            }
         }
 
         private void Watcher_Added(DeviceWatcher sender, DeviceInformation args)
@@ -54,6 +70,7 @@ namespace RovOperatorInterface.Communication
                     rawString => RawStringReceived?.Invoke(this, new RawStringReceivedEventArgs() { Text = rawString })
                 );
                 OpenConnection.Open();
+                Debug.WriteLine("New serial connection available; opening");
             }
             else
             {
@@ -71,7 +88,7 @@ namespace RovOperatorInterface.Communication
         {
             if (!IsConnected)
             {
-                throw new InvalidOperationException();
+                throw new RovNotConnectedException();
             }
 
             await OpenConnection.Send(message);
@@ -79,17 +96,20 @@ namespace RovOperatorInterface.Communication
 
         private class Connection
         {
+            private SerialDevice ConnectedDevice;
+            private CancellationTokenSource ReadTaskCancellationToken;
             private Task ReadTask;
+            private DataWriter Writer;
 
-            private readonly string Id;
+            public bool IsOpen { get; protected set; } = false;
+
+            public readonly string ConnectedDeviceId;
             private readonly Action<SerialMessage> OnMessageReceived;
             private readonly Action<string> OnRawStringReceived;
             
-            private DataWriter Writer;
-
             public Connection(string id, Action<SerialMessage> onMessageReceived, Action<string> onRawStringReceived)
             {
-                Id = id;
+                ConnectedDeviceId = id;
                 OnMessageReceived = onMessageReceived;
                 OnRawStringReceived = onRawStringReceived;
             }
@@ -98,10 +118,10 @@ namespace RovOperatorInterface.Communication
             {
                 if (ReadTask != null)
                 {
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException("An attempt was made to open the connection, but there is already an open connection.");
                 }
 
-                SerialDevice ConnectedDevice = await SerialDevice.FromIdAsync(Id);
+                ConnectedDevice = await SerialDevice.FromIdAsync(ConnectedDeviceId);
                 ConnectedDevice.BaudRate = 115200;
                 ConnectedDevice.StopBits = SerialStopBitCount.One;
                 ConnectedDevice.DataBits = 8;
@@ -112,7 +132,7 @@ namespace RovOperatorInterface.Communication
 
                 Writer = new DataWriter(ConnectedDevice.OutputStream);
 
-                // TODO: exception handling in loop
+                ReadTaskCancellationToken = new CancellationTokenSource();
                 ReadTask = Task.Run(async () =>
                 {
                     DataReader reader = new DataReader(ConnectedDevice.InputStream);
@@ -122,12 +142,23 @@ namespace RovOperatorInterface.Communication
                         try
                         {
                             // TODO: investigate larger chunks
-                            var loadResult = await reader.LoadAsync(1);
+                            // TODO: Can larger code points cause issues?
+                            var loadTask = reader.LoadAsync(1);
+                            var loadResult = await loadTask.AsTask(ReadTaskCancellationToken.Token);
+                            if (loadResult < 1)
+                            {
+                                continue;
+                            }
+
+                            if (loadResult != 1 || reader.UnconsumedBufferLength != 1)
+                            {
+                                Debugger.Break();
+                            }
+
                             char nextChar = reader.ReadString(1)[0];
                             if (nextChar == '\n')
                             {
                                 string line = builder.ToString();
-                                Debug.WriteLine(Environment.TickCount + " " + line);
                                 if (SerialMessage.TryParse(line, out SerialMessage message))
                                 {
                                     try
@@ -166,13 +197,38 @@ namespace RovOperatorInterface.Communication
                         }
                     }
                 });
+
+                IsOpen = true;
             }
             
+            public async Task Close()
+            {
+                IsOpen = false;
+                ReadTaskCancellationToken.Cancel();
+                // TODO: Will this ever hang?
+                try
+                {
+                    await ReadTask;
+                }
+                catch(Exception e)
+                {
+                    // All we care about is that the thread is dead; we're throwing it away anyway.
+                }
+
+                ReadTaskCancellationToken.Dispose();
+                Writer.Dispose();
+                ConnectedDevice.Dispose();
+
+                ReadTaskCancellationToken = null;
+                Writer = null;
+                ConnectedDevice = null;
+            }
+
             public async Task Send(SerialMessage message)
             {
-                if (ReadTask == null)
+                if (Writer == null)
                 {
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException("An attempt was made to send a message, but there is no underlying data writer open.");
                 }
 
                 Writer.WriteString(message.Serialize() + "\n");
@@ -181,9 +237,14 @@ namespace RovOperatorInterface.Communication
                     await Writer.StoreAsync();
                 }
                 // The semaphore timeout period has expired. (Exception from HRESULT: 0x80070079)
-                catch (Exception e) when (e.HResult == -2147024775)
+                catch (Exception e) when (e.HResult == unchecked((int)0x80070079))
                 {
-                    // TODO: try again
+                    throw new RovSendOperationFailedException(e);
+                }
+                // The device does not recognize the command. (Exception from HRESULT: 0x80070016)
+                catch (Exception e) when (e.HResult == unchecked((int)0x80070016))
+                {
+                    throw new RovSendOperationFailedException(e);
                 }
             }
         }

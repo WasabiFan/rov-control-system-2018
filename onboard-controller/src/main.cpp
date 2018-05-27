@@ -8,7 +8,7 @@
 #include <string>
 #include <cmath>
 
-#define DISABLE_TIMEOUT (5000)
+#define DISABLE_TIMEOUT (900)
 
 #define LOOP_FREQUENCY (100)
 
@@ -17,12 +17,9 @@ AuxiliaryControl auxControl;
 
 void setup()
 {
-    // Illuminate built-in LED
-    pinMode(13, OUTPUT);
-    digitalWrite(13, HIGH);
-
     Comms::getInstance().initialize();
     DEBUG_SERIAL_BEGIN();
+    DEBUG_SERIAL_IPRINTLN("App start; controller initializing.");
 
     // TODO: Remove blocking loop
     //while(!Serial);
@@ -67,6 +64,15 @@ bool parseFloat (float &f, std::string s)
     return !ss.fail() && !ss.get(c);
 }
 
+bool parseBool (bool &b, std::string s)
+{
+    std::stringstream ss(s);
+    ss >> std::boolalpha  >> b;
+    
+    char c;
+    return !ss.fail() && !ss.get(c);
+}
+
 void sendTelemetry()
 {
     auto controlTelemetry = control.getTelemetryInfo();
@@ -101,6 +107,14 @@ void sendOrientation()
     Comms::getInstance().sendPacketToSerial(&orientationPacket);
 }
 
+void sendEnableState()
+{
+    SerialPacket enableStatePacket("enable_state");
+    enableStatePacket.parameters.push_back(to_string(control.isEnabled()));
+
+    Comms::getInstance().sendPacketToSerial(&enableStatePacket);
+}
+
 bool handleMotionControlPacket(std::vector<std::string> parameters)
 {
     if(parameters.size() != 6)
@@ -116,7 +130,7 @@ bool handleMotionControlPacket(std::vector<std::string> parameters)
             return false;
         }
     }
-    control.updateRequestedRigidForcesPct(rigidForcesPct);
+    control.setRequestedRigidForcesPct(rigidForcesPct);
     return true;
 }
 
@@ -155,52 +169,111 @@ bool handleGimbalControlPacket(std::vector<std::string> parameters)
     return true;
 }
 
+bool handleEnableDisableRequestPacket(std::vector<std::string> parameters)
+{
+    if(parameters.size() != 1)
+    {
+        return false;
+    }
+
+    bool isEnabled;
+    if (!parseBool(isEnabled, parameters[0])) {
+        return false;
+    }
+
+    control.setIsEnabled(isEnabled);
+    return true;
+}
+
+void logFailedPacket(SerialPacket& packetData, bool wasKnownType)
+{
+    if (wasKnownType)
+    {
+        DEBUG_SERIAL_IPRINT(("Failed to handle " + packetData.type + " packet. Parameters: ").c_str());
+    }
+    else
+    {
+        DEBUG_SERIAL_IPRINT(("Failed to handle packet of unknown type " + packetData.type + ". Parameters: ").c_str());
+    }
+
+    if (packetData.parameters.size() > 0)
+    {
+        auto it = packetData.parameters.begin();
+        DEBUG_SERIAL_PRINT((*it++).c_str());
+        for (; it != packetData.parameters.end(); it++)
+        {
+            DEBUG_SERIAL_PRINT(", ");
+            DEBUG_SERIAL_PRINT((*it).c_str());
+        }
+        DEBUG_SERIAL_PRINTLN();
+    }
+    else
+    {
+        DEBUG_SERIAL_PRINTLN("No parameters.");
+    }
+}
+
 void loop()
 {
     unsigned long loopStart = millis();
     
     SerialPacket lastPacket;
+    int numPacketsReceived = 0;
     while(Comms::getInstance().readPacketFromSerial(&lastPacket))
     {
+        numPacketsReceived++;
+
         // TODO: Prevent blocking loop for too long
         if(lastPacket.type == "motion_control")
         {
             if(!handleMotionControlPacket(lastPacket.parameters))
             {
-                DEBUG_SERIAL_PRINTLN("Failed to handle motion control packet");
+                logFailedPacket(lastPacket, true);
             }
         }
         else if(lastPacket.type == "gripper_control")
         {
             if(!handleGripperControlPacket(lastPacket.parameters))
             {
-                DEBUG_SERIAL_PRINTLN("Failed to handle gripper control packet");
+                logFailedPacket(lastPacket, true);
             }
         }
         else if(lastPacket.type == "gimbal_control")
         {
             if(!handleGimbalControlPacket(lastPacket.parameters))
             {
-                DEBUG_SERIAL_PRINTLN("Failed to handle gimbal control packet");
+                logFailedPacket(lastPacket, true);
+            }
+        }
+        else if(lastPacket.type == "request_enable_disable")
+        {
+            if(!handleEnableDisableRequestPacket(lastPacket.parameters))
+            {
+                logFailedPacket(lastPacket, true);
             }
         }
         else
         {
-            // TODO
+            logFailedPacket(lastPacket, false);
         }
+
+        //DEBUG_SERIAL_IPRINT("Number of packets received: ");
+        //DEBUG_SERIAL_PRINTLN(numPacketsReceived);
     }
 
     Comms::getInstance().update();
+    control.update();
     auxControl.update();
 
     if(control.isEnabled() && Comms::getInstance().getTimeSinceLastReceive() > DISABLE_TIMEOUT)
     {
+        DEBUG_SERIAL_IPRINTLN("Connection timeout; disabling.");
         control.disable();
-        // TODO: log?
     }
 
     sendTelemetry();
     sendOrientation();
+    sendEnableState();
 
     unsigned long loopDuration = millis() - loopStart;
     uint32_t targetLoopDuration = (uint32_t)(1000/float(LOOP_FREQUENCY));
@@ -208,14 +281,14 @@ void loop()
 
     if (timeRemaining > 0) 
     {
-        //DEBUG_SERIAL_PRINT("Loop finished with ");
+        //DEBUG_SERIAL_IPRINT("Loop finished with ");
         //DEBUG_SERIAL_PRINT(timeRemaining);
         //DEBUG_SERIAL_PRINTLN(" msecs remaining");
         delay(min((uint32_t)timeRemaining, targetLoopDuration));
     }
     else
     {
-        DEBUG_SERIAL_PRINT("Loop finished having gone ");
+        DEBUG_SERIAL_IPRINT("Loop finished having gone ");
         DEBUG_SERIAL_PRINT(-timeRemaining);
         DEBUG_SERIAL_PRINT(" msecs over target (");
         DEBUG_SERIAL_PRINT(targetLoopDuration);

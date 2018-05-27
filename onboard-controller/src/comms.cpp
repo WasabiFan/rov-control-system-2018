@@ -85,7 +85,7 @@ void Comms::logError(std::string error)
     packet->parameters.push_back("error");
     packet->parameters.push_back(error);
 
-    DEBUG_SERIAL_PRINT("ERROR: ");
+    DEBUG_SERIAL_IPRINT("ERROR: ");
     DEBUG_SERIAL_PRINTLN(error.c_str());
 
     sendOrQueueAsyncPacket(packet);
