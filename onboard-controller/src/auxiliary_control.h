@@ -16,10 +16,10 @@
 
 #define BUZZER_PIN (6)
 #define BUZZER_TONE_LENGTH (1250)
-
 #define NO_STAGE (-1)
-
 const uint16_t buzzerStageTones[] = { 800, 950 };
+
+#define WATER_SENSOR_PIN (23)
 
 class AuxiliaryControl
 {
@@ -44,6 +44,7 @@ public:
 
   void setIsBuzzerPlaying(bool isPlaying);
 
+  bool checkLeakSensor();
   int getCalibStatus(uint8_t &system, uint8_t &gyro, uint8_t &accel, uint8_t &mag);
   imu::Vector<3> getOrientation();
 };

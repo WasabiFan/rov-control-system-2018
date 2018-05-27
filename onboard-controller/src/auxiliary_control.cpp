@@ -158,6 +158,11 @@ void AuxiliaryControl::setIsBuzzerPlaying(bool isPlaying)
     }
 }
 
+bool AuxiliaryControl::checkLeakSensor()
+{
+
+}
+
 int AuxiliaryControl::getCalibStatus(uint8_t &system, uint8_t &gyro, uint8_t &accel, uint8_t &mag)
 {
     imu.getCalibration(&system, &gyro, &accel, &mag);
