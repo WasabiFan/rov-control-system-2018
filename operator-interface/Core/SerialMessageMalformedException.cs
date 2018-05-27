@@ -1,6 +1,5 @@
 ﻿using RovOperatorInterface.Communication;
 using System;
-using System.Runtime.Serialization;
 
 namespace RovOperatorInterface.Core
 {
