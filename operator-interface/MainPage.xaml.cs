@@ -38,12 +38,20 @@ namespace RovOperatorInterface
 
             Controller.Connected += async (sender, e) =>
             {
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => ViewModel.IsConnected = true);
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    ViewModel.IsConnected = true;
+                    ViewModel.IsRovEnabled = false;
+                });
             };
 
             Controller.Disconnected += async (sender, e) =>
             {
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => ViewModel.IsConnected = false);
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    ViewModel.IsConnected = false;
+                    ViewModel.IsRovEnabled = false;
+                });
             };
 
             Controller.TelemetryDataReceived += async (sender, e) =>

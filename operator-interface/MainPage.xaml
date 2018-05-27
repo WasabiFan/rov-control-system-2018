@@ -3,13 +3,19 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:RovOperatorInterface"
+    xmlns:utils="using:RovOperatorInterface.Utils"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:RovOperatorInterface.Controls"
+    xmlns:converters="using:Microsoft.Toolkit.Uwp.UI.Converters"
     Loaded="Page_Loaded"
     x:Name="WindowContainer"
     mc:Ignorable="d">
-
+    <Page.Resources>
+        <SolidColorBrush x:Name="ConnectedBrush"  Color="Green" Opacity="0.2" />
+        <SolidColorBrush x:Name="DisconnectedBrush"  Color="Red" Opacity="0.8" />
+        <converters:BoolToObjectConverter x:Name="ConnectionStateToColorConverter" TrueValue="{StaticResource ConnectedBrush}" FalseValue="{StaticResource DisconnectedBrush}" />
+    </Page.Resources>
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <SplitView DisplayMode="Overlay" IsPaneOpen="{Binding IsConfigPaneExpanded, Mode=TwoWay}" PanePlacement="Right" OpenPaneLength="400">
             <SplitView.Pane>
@@ -55,6 +61,7 @@
                 <Grid Background="White" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0 0 10 10">
                     <Button Name="ExpandButton" Content="Expand configuration" Click="ExpandButton_Click"/>
                 </Grid>
+                <Grid Height="20" Width="600" Background="{Binding IsConnected, Converter={StaticResource ConnectionStateToColorConverter}}" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.RowSpan="3" Grid.ColumnSpan="2" />
             </Grid>
         </SplitView>
     </Grid>

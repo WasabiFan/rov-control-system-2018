@@ -238,18 +238,14 @@ namespace RovOperatorInterface.Communication
                 {
                     await Writer.StoreAsync();
                 }
-                // The semaphore timeout period has expired. (Exception from HRESULT: 0x80070079)
-                catch (Exception e) when (e.HResult == unchecked((int)0x80070079))
-                {
-                    throw new RovSendOperationFailedException(e);
-                }
-                // The device does not recognize the command. (Exception from HRESULT: 0x80070016)
-                catch (Exception e) when (e.HResult == unchecked((int)0x80070016))
-                {
-                    throw new RovSendOperationFailedException(e);
-                }
-                // A device attached to the system is not functioning. (Exception from HRESULT: 0x8007001F)
-                catch (Exception e) when (e.HResult == unchecked((int)0x8007001F))
+                catch (Exception e) when (
+                        // The semaphore timeout period has expired. (Exception from HRESULT: 0x80070079)
+                           e.HResult == unchecked((int)0x80070079)
+                        // The device does not recognize the command. (Exception from HRESULT: 0x80070016)
+                        || e.HResult == unchecked((int)0x80070016)
+                        // A device attached to the system is not functioning. (Exception from HRESULT: 0x8007001F)
+                        || e.HResult == unchecked((int)0x8007001F)
+                    )
                 {
                     throw new RovSendOperationFailedException(e);
                 }
