@@ -146,6 +146,7 @@ void AuxiliaryControl::setIsBuzzerPlaying(bool isPlaying)
 
         currentBuzzerStage = 0;
         tone(BUZZER_PIN, buzzerStageTones[currentBuzzerStage]);
+        DEBUG_SERIAL_IPRINTLN("Starting buzzer tone");
     }
     else
     {
@@ -154,7 +155,9 @@ void AuxiliaryControl::setIsBuzzerPlaying(bool isPlaying)
             return;
         }
 
+        currentBuzzerStage = NO_STAGE;
         noTone(BUZZER_PIN);
+        DEBUG_SERIAL_IPRINTLN("Stopping buzzer tone");
     }
 }
 

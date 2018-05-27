@@ -228,6 +228,8 @@ namespace RovOperatorInterface.Core
                     double outputVal = CurrentGimbalPosition / (double)NumGimbalPositions;
                     await Connector.Send(new SerialMessage("gimbal_control", outputVal.ToString()));
 
+                    await Connector.Send(new SerialMessage("buzzer_control", (LastGamepadReading?.Buttons.HasFlag(GamepadButtons.Menu) == true).ToString().ToLower()));
+
                     LastGamepadReading = reading;
                 }
                 catch (RovSendOperationFailedException)

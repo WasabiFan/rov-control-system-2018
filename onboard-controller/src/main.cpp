@@ -185,6 +185,22 @@ bool handleEnableDisableRequestPacket(std::vector<std::string> parameters)
     return true;
 }
 
+bool handleBuzzerControlPacket(std::vector<std::string> parameters)
+{
+    if(parameters.size() != 1)
+    {
+        return false;
+    }
+
+    bool isBuzzing;
+    if (!parseBool(isBuzzing, parameters[0])) {
+        return false;
+    }
+
+    auxControl.setIsBuzzerPlaying(isBuzzing);
+    return true;
+}
+
 void logFailedPacket(SerialPacket& packetData, bool wasKnownType)
 {
     if (wasKnownType)
@@ -247,6 +263,13 @@ void loop()
         else if(lastPacket.type == "request_enable_disable")
         {
             if(!handleEnableDisableRequestPacket(lastPacket.parameters))
+            {
+                logFailedPacket(lastPacket, true);
+            }
+        }
+        else if(lastPacket.type == "buzzer_control")
+        {
+            if(!handleBuzzerControlPacket(lastPacket.parameters))
             {
                 logFailedPacket(lastPacket, true);
             }
