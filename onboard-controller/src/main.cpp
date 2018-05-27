@@ -223,7 +223,6 @@ void loop()
     {
         numPacketsReceived++;
 
-        // TODO: Prevent blocking loop for too long
         if(lastPacket.type == "motion_control")
         {
             if(!handleMotionControlPacket(lastPacket.parameters))
@@ -256,9 +255,12 @@ void loop()
         {
             logFailedPacket(lastPacket, false);
         }
-
-        //DEBUG_SERIAL_IPRINT("Number of packets received: ");
-        //DEBUG_SERIAL_PRINTLN(numPacketsReceived);
+        
+        if (numPacketsReceived > 5)
+        {
+            DEBUG_SERIAL_IPRINTLN("Received more than five packets in one loop; breaking");
+            break;
+        }
     }
 
     Comms::getInstance().update();
