@@ -8,6 +8,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -34,19 +35,45 @@ namespace RovOperatorInterface.Controls
             DataContext = ViewModel;
         }
 
-        private async void UserControl_Loaded(object sender, RoutedEventArgs e)
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            DeviceInformationCollection DeviceInfo = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
+            DeviceWatcher Watcher = DeviceInformation.CreateWatcher(DeviceClass.VideoCapture);
+            Watcher.Added += Watcher_Added;
+            Watcher.Removed += Watcher_Removed;
+            Watcher.Updated += Watcher_Updated;
+            Watcher.Start();
+            /*DeviceInformationCollection DeviceInfo = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
             foreach (DeviceInformation Device in DeviceInfo)
                 ViewModel.KnownWebcams.Add(new WebcamViewModel(Device));
 
-            ViewModel.SelectedWebcam = ViewModel.KnownWebcams.FirstOrDefault();
+            ViewModel.SelectedWebcam = ViewModel.KnownWebcams.FirstOrDefault();*/
+        }
+
+        private void Watcher_Updated(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void Watcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            throw new NotImplementedException();
+        }
+
+        private async void Watcher_Added(DeviceWatcher sender, DeviceInformation args)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal,async () =>
+            {
+                ViewModel.KnownWebcams.Add(new WebcamViewModel(await DeviceInformation.CreateFromIdAsync(args.Id)));
+                if (ViewModel.SelectedWebcam == null)
+                {
+                    ViewModel.SelectedWebcam = ViewModel.KnownWebcams.FirstOrDefault();
+                }
+            });
         }
 
         private void WebcamSelectorDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (WebcamSelectionChanged != null)
-                WebcamSelectionChanged(this, new WebcamSelectedEventArgs(SelectedWebcam));
+            WebcamSelectionChanged?.Invoke(this, new WebcamSelectedEventArgs(SelectedWebcam));
         }
 
         public class WebcamViewModel

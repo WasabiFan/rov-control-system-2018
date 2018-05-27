@@ -30,6 +30,8 @@ namespace RovOperatorInterface.Core
     {
         private RovConnector Connector;
 
+        public event EventHandler<EventArgs> Connected;
+        public event EventHandler<EventArgs> Disconnected;
         public event EventHandler<RawStringReceivedEventArgs> TelemetryDataReceived;
         public event EventHandler<LogMessageEventArgs> LogMessageReceived;
         public event EventHandler<OrientationEventArgs> OrientationDataReceived;
@@ -47,6 +49,9 @@ namespace RovOperatorInterface.Core
             Connector = new RovConnector();
             Connector.MessageReceived += Connector_MessageReceived;
             Connector.RawStringReceived += Connector_RawStringReceived;
+
+            Connector.Connected += (sender, e) => Connected?.Invoke(this, new EventArgs());
+            Connector.Disconnected += (sender, e) => Disconnected?.Invoke(this, new EventArgs());
         }
 
         public void Initialize()

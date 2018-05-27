@@ -11,9 +11,10 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <SplitView DisplayMode="Inline" IsPaneOpen="True" PanePlacement="Right">
+        <SplitView DisplayMode="Overlay" IsPaneOpen="{Binding IsConfigPaneExpanded, Mode=TwoWay}" PanePlacement="Right" OpenPaneLength="400">
             <SplitView.Pane>
-                <StackPanel Padding="10">
+                <ScrollViewer>
+                    <StackPanel Padding="10">
                     <TextBlock Text="CONFIGURATION" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,5" FontWeight="Black"/>
 
                     <TextBlock Text="Local devices" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,5"/>
@@ -21,7 +22,7 @@
                     <controls:WebcamSelector x:Name="WebcamSelector" WebcamSelectionChanged="WebcamSelector_WebcamSelectionChanged" Margin="0,0,0,5" />
 
                     <TextBlock Text="Remote Connection" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,5"/>
-                    <ToggleButton Name="EnableToggle" Content="Enable" IsChecked="{Binding IsRovEnabled, Mode=OneWay}"  Checked="EnableToggle_Checked" Unchecked="EnableToggle_Unchecked" Margin="0,0,0,5"/><!--IsEnabled="{Binding IsEnableButtonEnabled}"-->
+                    <ToggleButton Name="EnableToggle" Content="Enable" IsEnabled="{Binding IsConnected}" IsChecked="{Binding IsRovEnabled, Mode=OneWay}"  Checked="EnableToggle_Checked" Unchecked="EnableToggle_Unchecked" Margin="0,0,0,5"/>
 
                     <ToggleButton Content="Use IMU" IsChecked="{Binding IsImuEnabled, Mode=TwoWay}" Margin="0,0,0,5"/>
 
@@ -37,6 +38,7 @@
                         </ListView.ItemTemplate>
                     </ListView>
                 </StackPanel>
+                </ScrollViewer>
             </SplitView.Pane>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -46,9 +48,13 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="2*"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="60"/>
                 </Grid.RowDefinitions>
-                <CaptureElement Name="PreviewControl" Stretch="Uniform" Margin="-10,0,10,0" Grid.ColumnSpan="2" Grid.RowSpan="2"/>
+                <CaptureElement Name="PreviewControl" Stretch="Uniform" HorizontalAlignment="Left" Grid.ColumnSpan="2" Grid.RowSpan="3"/>
                 <controls:ArtificialHorizon Grid.Column="1" Grid.Row="1" x:Name="FirstPersonArtificialHorizon" Pitch="{Binding VehiclePitch}" Roll="{Binding Path=VehicleRoll}" DataContext="{Binding ElementName=WindowContainer, Path=DataContext}" />
+                <Grid Background="White" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0 0 10 10">
+                    <Button Name="ExpandButton" Content="Expand configuration" Click="ExpandButton_Click"/>
+                </Grid>
             </Grid>
         </SplitView>
     </Grid>

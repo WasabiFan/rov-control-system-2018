@@ -35,6 +35,17 @@ namespace RovOperatorInterface
             Window.Current.CoreWindow.KeyUp += Page_KeyRouted;
 
             Controller = new RovController();
+
+            Controller.Connected += async (sender, e) =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => ViewModel.IsConnected = true);
+            };
+
+            Controller.Disconnected += async (sender, e) =>
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => ViewModel.IsConnected = false);
+            };
+
             Controller.TelemetryDataReceived += async (sender, e) =>
             {
                 await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => ViewModel.TelemetryData = e.Text);
@@ -182,6 +193,11 @@ namespace RovOperatorInterface
         private void EnableToggle_Unchecked(object sender, RoutedEventArgs e)
         {
             Controller.RequestEnableDisable(false);
+        }
+
+        private void ExpandButton_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.IsConfigPaneExpanded = true;
         }
     }
 }

@@ -28,6 +28,9 @@ namespace RovOperatorInterface.Communication
         DeviceWatcher Watcher;
 
         Connection OpenConnection = null;
+        
+        public event EventHandler<EventArgs> Connected;
+        public event EventHandler<EventArgs> Disconnected;
 
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
         public event EventHandler<RawStringReceivedEventArgs> RawStringReceived;
@@ -55,6 +58,7 @@ namespace RovOperatorInterface.Communication
             {
                 await OpenConnection.Close();
                 OpenConnection = null;
+                Disconnected?.Invoke(this, new EventArgs());
             }
         }
 
@@ -62,12 +66,13 @@ namespace RovOperatorInterface.Communication
         {
             if (OpenConnection == null)
             {
+                Debug.WriteLine("New serial connection available; opening");
                 OpenConnection = new Connection(args.Id,
                     message => MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Message = message }),
                     rawString => RawStringReceived?.Invoke(this, new RawStringReceivedEventArgs() { Text = rawString })
                 );
                 OpenConnection.Open();
-                Debug.WriteLine("New serial connection available; opening");
+                Connected?.Invoke(this, new EventArgs());
             }
             else
             {
@@ -240,6 +245,11 @@ namespace RovOperatorInterface.Communication
                 }
                 // The device does not recognize the command. (Exception from HRESULT: 0x80070016)
                 catch (Exception e) when (e.HResult == unchecked((int)0x80070016))
+                {
+                    throw new RovSendOperationFailedException(e);
+                }
+                // A device attached to the system is not functioning. (Exception from HRESULT: 0x8007001F)
+                catch (Exception e) when (e.HResult == unchecked((int)0x8007001F))
                 {
                     throw new RovSendOperationFailedException(e);
                 }

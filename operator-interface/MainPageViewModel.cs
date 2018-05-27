@@ -19,7 +19,6 @@ namespace RovOperatorInterface
         }
         
         private bool _IsRovEnabled { get; set; }
-        private bool _IsConnectButtonEnabled { get; set; }
 
         private double _VehiclePitch { get; set; }
         private double _VehicleRoll { get; set; }
@@ -30,6 +29,8 @@ namespace RovOperatorInterface
         private bool _IsConnected { get; set; }
 
         private string _TelemetryData { get; set; }
+
+        private bool _IsConfigPaneExpanded { get; set; } = true;
 
         public ObservableCollection<string> LogMessages { get; protected set; } = new ObservableCollection<string>();
 
@@ -45,12 +46,17 @@ namespace RovOperatorInterface
                 }
             }
         }
-        
-        public bool IsEnableButtonEnabled
+
+        public bool IsConfigPaneExpanded
         {
-            get
+            get => _IsConfigPaneExpanded;
+            set
             {
-                return IsConnected;
+                if (value != _IsConfigPaneExpanded)
+                {
+                    _IsConfigPaneExpanded = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsConfigPaneExpanded)));
+                }
             }
         }
 
