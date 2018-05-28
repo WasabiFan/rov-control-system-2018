@@ -1,4 +1,5 @@
 #include <Audio.h>
+#include <Servo.h>
 
 //#define DUMP_MODE
 
@@ -9,17 +10,27 @@ AudioConnection patchCord1(audioIn, fft);
 
 #define NO_TIME (UINT32_MAX)
 #define TONE_TIME_THRESH 1000
-#define RESET_TIME_THRESH 500
+#define TONE_RESET_TIME_THRESH 500
+
+#define SERVO_PIN (2)
+#define SERVO_CLOSED_POS 100
+#define SERVO_OPEN_POS 80
+#define SERVO_RESET_TIME_THRESH (4000)
 
 uint8_t detectionStage = 0;
 const int frequencyBuckets[] = {19, 22};
 uint32_t lastStageEndTime = NO_TIME;
 uint32_t detectionStartTime = NO_TIME;
+uint32_t triggerTime = NO_TIME;
+
+Servo servo;
 
 void setup()
 {
     Serial.begin(115200);
     AudioMemory(12);
+    servo.attach(SERVO_PIN);
+    servo.write(SERVO_CLOSED_POS);
 }
 
 void beginLogMessage()
@@ -31,7 +42,22 @@ void beginLogMessage()
 
 void activateTrigger()
 {
+    beginLogMessage();
     Serial.println("TRIGGER");
+    triggerTime = millis();
+    servo.write(SERVO_OPEN_POS);
+}
+
+void updateServoReset()
+{
+    if (triggerTime != NO_TIME && millis() - triggerTime > SERVO_RESET_TIME_THRESH)
+    {
+        beginLogMessage();
+        Serial.println("Trigger time expired; resetting");
+
+        servo.write(SERVO_CLOSED_POS);
+        triggerTime = NO_TIME;
+    }
 }
 
 bool checkIsFreqActive(int bucketNumber)
@@ -83,7 +109,7 @@ void updateTriggerCheck()
         else
         {
             detectionStartTime = NO_TIME;
-            if (lastStageEndTime != NO_TIME && time - lastStageEndTime > RESET_TIME_THRESH)
+            if (lastStageEndTime != NO_TIME && time - lastStageEndTime > TONE_RESET_TIME_THRESH)
             {
                 beginLogMessage();
                 Serial.print("Timed out waiting for stage ");
@@ -140,5 +166,6 @@ void loop()
     printSpectrum();
 #else
     updateTriggerCheck();
+    updateServoReset();
 #endif
 }
