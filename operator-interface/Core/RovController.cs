@@ -214,7 +214,8 @@ namespace RovOperatorInterface.Core
 
                     await Connector.Send(new SerialMessage("gripper_control",
                         ButtonsToAnalog(reading, GamepadButtons.DPadDown, GamepadButtons.DPadUp, 0.4f).ToString(),
-                        ButtonsToAnalog(reading, GamepadButtons.RightShoulder, GamepadButtons.LeftShoulder).ToString()));
+                        ButtonsToAnalog(reading, GamepadButtons.RightShoulder, GamepadButtons.LeftShoulder).ToString(),
+                        ButtonsToAnalog(reading, GamepadButtons.X, GamepadButtons.Y).ToString()));
 
                     if (reading?.Buttons.HasFlag(GamepadButtons.A) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.A) == false)
                     {

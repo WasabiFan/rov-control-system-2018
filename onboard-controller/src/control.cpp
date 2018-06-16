@@ -34,7 +34,7 @@ void Control::writeMotorController29(uint8_t pin, float output)
 {
     if (this->isEnabled())
     {
-        int pwmValue = map(output, -1, 1, THRUSTER_MIN_DUTY_CYCLE, THRUSTER_MAX_DUTY_CYCLE);
+        int pwmValue = map(output, -1, 1, PPM_MIN_DUTY_CYCLE, PPM_MAX_DUTY_CYCLE);
         analogWrite(pin, pwmValue);
     }
     else
@@ -51,24 +51,28 @@ void Control::init(DesignInfo& design)
     digitalWrite(STATUS_LED_PIN, HIGH);
 
     for (int col = 0; col < NUM_THRUSTERS; col++) {
-        this->intrinsics.block(0, col, 3, 1) = this->design.thrusters[col].orientation.normalized();
+        auto normedOrientation = this->design.thrusters[col].orientation.normalized();
+        this->intrinsics.block(0, col, 3, 1) = normedOrientation;
 
         auto comRelativePosition = this->design.thrusters[col].position - this->design.centerOfMass;
-        this->intrinsics.block(3, col, 3, 1) = comRelativePosition.cross(this->design.thrusters[col].orientation.normalized());
+        this->intrinsics.block(3, col, 3, 1) = comRelativePosition.cross(normedOrientation);
     }
 
     analogWriteResolution(PWM_PRECISION_BITS);
     for(size_t i = 0; i < NUM_THRUSTERS; i++)
     {
-        analogWriteFrequency(this->design.thrusters[i].pwmPin, THRUSTER_BASE_FREQUENCY);
+        analogWriteFrequency(this->design.thrusters[i].pwmPin, PPM_BASE_FREQUENCY);
         pinMode(this->design.thrusters[i].pwmPin, OUTPUT);
     }
 
-    analogWriteFrequency(this->design.gripperOpenClosePin, THRUSTER_BASE_FREQUENCY);
+    analogWriteFrequency(this->design.gripperOpenClosePin, PPM_BASE_FREQUENCY);
     pinMode(this->design.gripperOpenClosePin, OUTPUT);
     
-    analogWriteFrequency(this->design.gripperUpDownPin, THRUSTER_BASE_FREQUENCY);
+    analogWriteFrequency(this->design.gripperUpDownPin, PPM_BASE_FREQUENCY);
     pinMode(this->design.gripperUpDownPin, OUTPUT);
+    
+    analogWriteFrequency(this->design.extendSlidePin, PPM_BASE_FREQUENCY);
+    pinMode(this->design.extendSlidePin, OUTPUT);
 
     pinMode(this->design.gimbalPin, OUTPUT);
 
@@ -127,10 +131,11 @@ void Control::setRequestedRigidForcesPct(Eigen::Vector6f newForcesPct)
     this->updateThrusterOutputs(thrusterOutputs);
 }
 
-void Control::setGripperOutputs(float upDown, float openClose)
+void Control::setGripperOutputs(float upDown, float openClose, float extendRetract)
 {
     writeMotorController29(this->design.gripperUpDownPin, upDown);
     writeMotorController29(this->design.gripperOpenClosePin, openClose);
+    writeMotorController29(this->design.extendSlidePin, extendRetract);
 }
 
 void Control::setGimbalOutputs(float upDown)

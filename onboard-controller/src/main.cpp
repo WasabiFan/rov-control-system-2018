@@ -141,15 +141,16 @@ bool handleGripperControlPacket(std::vector<std::string> parameters)
         return false;
     }
 
-    float upDown, openClose;
+    float upDown, openClose, extendRetract;
     bool success = parseFloat(upDown, parameters[0]);
     success &= parseFloat(openClose, parameters[1]);
+    success &= parseFloat(extendRetract, parameters[1]);
 
     if (!success) {
         return false;
     }
 
-    control.setGripperOutputs(upDown, openClose);
+    control.setGripperOutputs(upDown, openClose, extendRetract);
     return true;
 }
 
