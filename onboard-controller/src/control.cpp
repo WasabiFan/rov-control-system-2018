@@ -142,7 +142,7 @@ void Control::setGimbalOutputs(float upDown)
 {
     double scaledUpDown = map(upDown, 0, 1, this->design.minGimbalPosition, this->design.maxGimbalPosition);
     int val = (int)map(scaledUpDown, 0, 1, 0, PWM_RANGE_MAX);
-    //analogWrite(this->design.gimbalPin, val);
+    analogWrite(this->design.gimbalPin, val);
 }
 
 void Control::enable()

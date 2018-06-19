@@ -39,8 +39,8 @@ void setup()
     design.gripperOpenClosePin = 23;
     design.gimbalPin = 2;
 
-    design.minGimbalPosition = 0.0;
-    design.maxGimbalPosition = 0.7;
+    design.minGimbalPosition = 0.4;
+    design.maxGimbalPosition = 0.9;
 
     control.init(design);
     Serial.println(control.getIntrinsicsDebugInfo().c_str());

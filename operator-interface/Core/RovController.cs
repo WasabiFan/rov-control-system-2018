@@ -219,11 +219,11 @@ namespace RovOperatorInterface.Core
 
                     if (reading?.Buttons.HasFlag(GamepadButtons.A) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.A) == false)
                     {
-                        CurrentGimbalPosition--;
+                        CurrentGimbalPosition++;
                     }
                     else if (reading?.Buttons.HasFlag(GamepadButtons.B) == true && LastGamepadReading?.Buttons.HasFlag(GamepadButtons.B) == false)
                     {
-                        CurrentGimbalPosition++;
+                        CurrentGimbalPosition--;
                     }
                     CurrentGimbalPosition = Math.Max(Math.Min(CurrentGimbalPosition, NumGimbalPositions), 0);
                     double outputVal = CurrentGimbalPosition / (double)NumGimbalPositions;
