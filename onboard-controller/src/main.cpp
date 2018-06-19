@@ -37,6 +37,7 @@ void setup()
     }};
     design.gripperUpDownPin = 22;
     design.gripperOpenClosePin = 23;
+    design.extendSlidePin = 21;
     design.gimbalPin = 2;
 
     design.minGimbalPosition = 0.4;
@@ -144,7 +145,7 @@ bool handleGripperControlPacket(std::vector<std::string> parameters)
     float upDown, openClose, extendRetract;
     bool success = parseFloat(upDown, parameters[0]);
     success &= parseFloat(openClose, parameters[1]);
-    success &= parseFloat(extendRetract, parameters[1]);
+    success &= parseFloat(extendRetract, parameters[2]);
 
     if (!success) {
         return false;
