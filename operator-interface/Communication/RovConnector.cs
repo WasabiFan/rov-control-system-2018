@@ -245,6 +245,8 @@ namespace RovOperatorInterface.Communication
                         || e.HResult == unchecked((int)0x80070016)
                         // A device attached to the system is not functioning. (Exception from HRESULT: 0x8007001F)
                         || e.HResult == unchecked((int)0x8007001F)
+                        // System.IO.FileNotFoundException: 'The system cannot find the file specified. (Exception from HRESULT: 0x80070002)'
+                        || e.HResult == unchecked((int)0x80070002)
                     )
                 {
                     throw new RovSendOperationFailedException(e);

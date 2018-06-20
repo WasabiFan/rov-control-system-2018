@@ -137,7 +137,7 @@ bool handleMotionControlPacket(std::vector<std::string> parameters)
 
 bool handleGripperControlPacket(std::vector<std::string> parameters)
 {
-    if(parameters.size() != 2)
+    if(parameters.size() != 3)
     {
         return false;
     }
