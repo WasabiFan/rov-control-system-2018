@@ -10,7 +10,7 @@
 
 #define DISABLE_TIMEOUT (900)
 
-#define LOOP_FREQUENCY (100)
+#define LOOP_FREQUENCY (80)
 
 Control control;
 AuxiliaryControl auxControl;
